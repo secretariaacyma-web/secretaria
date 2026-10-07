@@ -27,6 +27,8 @@ function codigo(ch) {
   if (c >= 160 && c <= 255) return c;
   if (EXTRA_CP1252[ch] !== undefined) return EXTRA_CP1252[ch];
   if (ch === '\t') return 32;
+  if (ch === '→') return 62; // >
+  if (ch === '←') return 60; // <
   return 63; // "?"
 }
 
@@ -77,6 +79,53 @@ class Documento {
   constructor() {
     this.paginas = [[]];
     this.y = MARGEN_SUP; // distancia desde el borde superior
+    this.imagenes = []; // imágenes JPEG extra: { b64, w, h }
+  }
+
+  // Dibuja un JPEG (base64) con su esquina superior izquierda en (x, yTop medido desde arriba).
+  imagen(b64, w, h, x, yTop, dw, dh) {
+    let k = this.imagenes.findIndex((im) => im.b64 === b64);
+    if (k < 0) { this.imagenes.push({ b64, w, h }); k = this.imagenes.length - 1; }
+    this.ops.push(`q ${num(dw)} 0 0 ${num(dh)} ${num(x)} ${num(A4[1] - yTop - dh)} cm /Im${k + 2} Do Q`);
+  }
+
+  // Tabla con cabecera que se repite en cada página. cols: [{ h, w (puntos), align }].
+  tabla(cols, filas, { size = 9 } = {}) {
+    const pad = 3;
+    const lh = size * 1.28;
+    const total = cols.reduce((a, c) => a + c.w, 0);
+    const esc = total > ANCHO_UTIL ? ANCHO_UTIL / total : 1;
+    const anchos = cols.map((c) => c.w * esc);
+    const cabecera = cols.map((c) => c.h);
+    const fila = (celdas, { cab = false, zebra = false } = {}) => {
+      const f = cab ? 'B' : 'R';
+      const lineas = celdas.map((t, i) => envolver(String(t ?? ''), f, size, anchos[i] - pad * 2));
+      const alto = Math.max(1, ...lineas.map((l) => l.length)) * lh + pad * 2 - (lh - size);
+      if (this.y + alto > A4[1] - MARGEN_INF) {
+        this.nuevaPagina();
+        if (!cab) fila(cabecera, { cab: true });
+      }
+      const yTop = A4[1] - this.y;
+      if (cab) this.ops.push(`0.12 0.23 0.37 rg ${num(MARGEN_X)} ${num(yTop - alto)} ${num(ANCHO_UTIL)} ${num(alto)} re f`);
+      else if (zebra) this.ops.push(`0.95 0.96 0.98 rg ${num(MARGEN_X)} ${num(yTop - alto)} ${num(ANCHO_UTIL)} ${num(alto)} re f`);
+      let x = MARGEN_X;
+      celdas.forEach((_, i) => {
+        lineas[i].forEach((l, j) => {
+          if (!l) return;
+          const w = ancho(l, f, size);
+          const al = cols[i].align;
+          const tx = al === 'right' ? x + anchos[i] - pad - w : al === 'center' ? x + (anchos[i] - w) / 2 : x + pad;
+          this.ops.push(`BT ${cab ? 1 : 0} g /${FUENTE[f]} ${size} Tf 1 0 0 1 ${num(tx)} ${num(yTop - pad - size - j * lh)} Tm (${escapar(codificar(l))}) Tj ET`);
+        });
+        x += anchos[i];
+      });
+      this.ops.push(`0.75 G 0.4 w ${num(MARGEN_X)} ${num(yTop - alto)} m ${num(MARGEN_X + ANCHO_UTIL)} ${num(yTop - alto)} l S`);
+      this.y += alto;
+    };
+    this.asegurar(60);
+    fila(cabecera, { cab: true });
+    filas.forEach((f, i) => fila(f, { zebra: i % 2 === 1 }));
+    this.y += 8;
   }
   get ops() { return this.paginas[this.paginas.length - 1]; }
   nuevaPagina() { this.paginas.push([]); this.y = MARGEN_SUP; }
@@ -161,7 +210,7 @@ function aBytes(cadena) {
 }
 const rellenar = (n, largo) => String(n).padStart(largo, '0');
 
-function ensamblar(paginas, { titulo, autor }) {
+function ensamblar(paginas, { titulo, autor }, imagenes = []) {
   const total = paginas.length;
   const objs = [];
   objs[1] = '<< /Type /Catalog /Pages 2 0 R >>';
@@ -174,13 +223,18 @@ function ensamblar(paginas, { titulo, autor }) {
   objs[6] = `<< /Title (${escapar(codificar(titulo))}) /Author (${escapar(codificar(autor))}) /Creator (Secretaria) /CreationDate (${fecha}) >>`;
   paginas.forEach((ops, i) => {
     const flujo = ops.join('\n');
-    objs[7 + 2 * i] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${A4[0]} ${A4[1]}] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> /XObject << /Im1 ${7 + 2 * total} 0 R >> >> /Contents ${8 + 2 * i} 0 R >>`;
+    objs[7 + 2 * i] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${A4[0]} ${A4[1]}] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> /XObject << /Im1 ${7 + 2 * total} 0 R${imagenes.map((_, k) => ` /Im${k + 2} ${8 + 2 * total + k} 0 R`).join('')} >> >> /Contents ${8 + 2 * i} 0 R >>`;
     objs[8 + 2 * i] = `<< /Length ${flujo.length} >>\nstream\n${flujo}\nendstream`;
   });
 
   // Logo: JPEG incrustado tal cual (DCTDecode).
   const jpg = atob(LOGO.b64);
   objs[7 + 2 * total] = `<< /Type /XObject /Subtype /Image /Width ${LOGO.w} /Height ${LOGO.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n${jpg}\nendstream`;
+
+  imagenes.forEach((im, k) => {
+    const bin = atob(im.b64);
+    objs[8 + 2 * total + k] = `<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${bin.length} >>\nstream\n${bin}\nendstream`;
+  });
 
   let out = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
   const offsets = [];
@@ -263,7 +317,7 @@ export function generarPDFActa(datos) {
     ops.push(`BT 0.4 g /F3 9 Tf 1 0 0 1 ${num(x)} 38 Tm (${escapar(codificar(texto))}) Tj ET`);
   });
 
-  return ensamblar(doc.paginas, { titulo: `Acta N° ${datos.numero}`, autor: datos.iglesia || 'Secretaría' });
+  return ensamblar(doc.paginas, { titulo: `Acta N° ${datos.numero}`, autor: datos.iglesia || 'Secretaría' }, doc.imagenes);
 }
 
 /**
@@ -305,5 +359,105 @@ export function generarPDFNota(datos) {
   });
 
   const t = datos.certificado ? datos.titulo : `Nota ${datos.numero || '(borrador)'}`;
-  return ensamblar(doc.paginas, { titulo: t, autor: datos.iglesia || 'Secretaría' });
+  return ensamblar(doc.paginas, { titulo: t, autor: datos.iglesia || 'Secretaría' }, doc.imagenes);
+}
+
+
+// ---------------------------------------------------------------- Inventario
+// Lee las medidas de un JPEG en base64 (para dibujarlo sin deformarlo).
+function medidasJPEG(b64) {
+  const bin = atob(b64);
+  let i = 2;
+  while (i < bin.length) {
+    if (bin.charCodeAt(i) !== 0xff) { i++; continue; }
+    const m = bin.charCodeAt(i + 1);
+    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+      return { h: (bin.charCodeAt(i + 5) << 8) | bin.charCodeAt(i + 6), w: (bin.charCodeAt(i + 7) << 8) | bin.charCodeAt(i + 8) };
+    }
+    i += 2 + ((bin.charCodeAt(i + 2) << 8) | bin.charCodeAt(i + 3));
+  }
+  return null;
+}
+
+function pieDePagina(doc, izquierda) {
+  const total = doc.paginas.length;
+  doc.paginas.forEach((ops, i) => {
+    const texto = `${izquierda}${total > 1 ? `  -  Página ${i + 1} de ${total}` : ''}`;
+    const x = (A4[0] - ancho(texto, 'I', 9)) / 2;
+    ops.push(`0.6 G 0.4 w ${MARGEN_X} 52 m ${MARGEN_X + ANCHO_UTIL} 52 l S`);
+    ops.push(`BT 0.4 g /F3 9 Tf 1 0 0 1 ${num(x)} 38 Tm (${escapar(codificar(texto))}) Tj ET`);
+  });
+}
+
+/**
+ * Informe de inventario.
+ * datos: { iglesia, titulo, fechaTxt, filtros, resumen:[[etiqueta, valor]], grupos:[{ titulo, filas:[[cod, bien, cat, ubic, cant, estado]] }],
+ *          prestamos:[[bien, prestado a, desde, devolver, situación]] }
+ */
+export function generarPDFInventario(datos) {
+  const doc = new Documento();
+  doc.encabezado();
+  doc.parrafo((datos.titulo || 'Inventario de bienes').toUpperCase(), { f: 'B', size: 18, align: 'center', despues: 2 });
+  doc.parrafo(datos.fechaTxt, { f: 'I', size: 10.5, align: 'center', gris: 0.35, despues: datos.filtros ? 2 : 6 });
+  if (datos.filtros) doc.parrafo(datos.filtros, { f: 'I', size: 9.5, align: 'center', gris: 0.35, despues: 6 });
+
+  doc.seccion('Resumen');
+  doc.tabla([{ h: 'Concepto', w: 330 }, { h: 'Cantidad', w: 141, align: 'right' }], datos.resumen, { size: 10 });
+
+  const cols = [
+    { h: 'Código', w: 52 }, { h: 'Bien', w: 150 }, { h: 'Categoría', w: 80 },
+    { h: 'Ubicación', w: 78 }, { h: 'Cant.', w: 32, align: 'right' }, { h: 'Estado', w: 79 },
+  ];
+  for (const g of datos.grupos) {
+    doc.seccion(`${g.titulo} (${g.filas.length})`);
+    if (g.filas.length) doc.tabla(cols, g.filas);
+    else doc.parrafo('Sin bienes.', { gris: 0.5 });
+  }
+  if (datos.prestamos?.length) {
+    doc.seccion(`Préstamos vigentes (${datos.prestamos.length})`);
+    doc.tabla([{ h: 'Bien', w: 150 }, { h: 'Prestado a', w: 100 }, { h: 'Desde', w: 60 }, { h: 'Devolver', w: 60 }, { h: 'Situación', w: 101 }], datos.prestamos);
+  }
+  pieDePagina(doc, `Inventario - ${datos.iglesia || ''}`);
+  return ensamblar(doc.paginas, { titulo: datos.titulo || 'Inventario', autor: datos.iglesia || 'Secretaría' }, doc.imagenes);
+}
+
+/**
+ * Ficha de un bien, con su foto, historial y préstamos.
+ * datos: { iglesia, codigo, nombre, foto (data URL jpeg o null), campos:[[etiqueta, valor]], historial:[[fecha, detalle]], prestamos:[[...]], fechaTxt }
+ */
+export function generarPDFFichaBien(datos) {
+  const doc = new Documento();
+  doc.encabezado();
+  doc.parrafo(`FICHA DE BIEN  ${datos.codigo}`, { f: 'B', size: 17, align: 'center', despues: 2 });
+  doc.parrafo(datos.fechaTxt, { f: 'I', size: 10, align: 'center', gris: 0.35, despues: 14 });
+
+  const b64 = datos.foto && String(datos.foto).startsWith('data:image/jpeg') ? String(datos.foto).split(',')[1] : null;
+  const med = b64 ? medidasJPEG(b64) : null;
+  const yInicio = doc.y;
+  let wTexto = ANCHO_UTIL;
+  let yFoto = 0;
+  if (med) {
+    const maxW = 170; const maxH = 170;
+    const k = Math.min(maxW / med.w, maxH / med.h);
+    const dw = med.w * k; const dh = med.h * k;
+    doc.imagen(b64, med.w, med.h, MARGEN_X + ANCHO_UTIL - dw, yInicio, dw, dh);
+    wTexto = ANCHO_UTIL - maxW - 14;
+    yFoto = yInicio + dh;
+  }
+  doc.parrafo(datos.nombre, { f: 'B', size: 14, despues: 8, w: wTexto });
+  for (const [k, v] of datos.campos) {
+    doc.parrafo(`${k}: ${v || '—'}`, { size: 10.5, despues: 2, w: wTexto });
+  }
+  doc.y = Math.max(doc.y, yFoto) + 6;
+
+  doc.seccion('Historial');
+  if (datos.historial.length) doc.tabla([{ h: 'Fecha', w: 70 }, { h: 'Movimiento', w: 401 }], datos.historial);
+  else doc.parrafo('Sin movimientos.', { gris: 0.5 });
+
+  if (datos.prestamos.length) {
+    doc.seccion('Préstamos');
+    doc.tabla([{ h: 'Prestado a', w: 120 }, { h: 'Cant.', w: 32, align: 'right' }, { h: 'Desde', w: 62 }, { h: 'Devolver', w: 62 }, { h: 'Devuelto', w: 62 }, { h: 'Situación', w: 133 }], datos.prestamos);
+  }
+  pieDePagina(doc, `Ficha ${datos.codigo} - ${datos.iglesia || ''}`);
+  return ensamblar(doc.paginas, { titulo: `Ficha ${datos.codigo}`, autor: datos.iglesia || 'Secretaría' }, doc.imagenes);
 }

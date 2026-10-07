@@ -42,9 +42,10 @@ export async function render(cont, ctx) {
 }
 
 // =============================================================== FORMULARIO
-async function abrirForm({ tipo, nota = null }) {
+async function abrirForm({ tipo, nota = null, copiaDe = null }) {
   const modelo = MODELOS[tipo];
   const editando = !!nota;
+  const base = nota || copiaDe; // datos de partida (edición o copia)
   const conMiembro = modelo.campos.some((c) => c.name === 'nombre') && tipo !== 'presentacion';
   let personas = [];
   if (conMiembro) {
@@ -65,16 +66,16 @@ async function abrirForm({ tipo, nota = null }) {
   const contexto = (f) => ({ iglesia: estado.iglesia?.nombre || '', lugar: f.lugar?.value.trim() || '', fecha: f.fecha?.value || hoy() });
   const leerDatos = (f) => Object.fromEntries(modelo.campos.map((c) => [c.name, f.elements[c.name]?.value?.trim() || '']));
 
-  const valores = editando
-    ? { ...nota.datos, persona_id: nota.persona_id, fecha: nota.fecha, lugar: nota.lugar, cuerpo: nota.cuerpo, firman: nota.datos?._firman || modelo.firman }
+  const valores = base
+    ? { ...base.datos, persona_id: base.persona_id, fecha: copiaDe ? hoy() : base.fecha, lugar: base.lugar, cuerpo: base.cuerpo, firman: base.datos?._firman || modelo.firman }
     : { fecha: hoy(), lugar: lugarPorDefecto(), firman: modelo.firman, cuerpo: modelo.texto({}, { iglesia: estado.iglesia?.nombre || '', lugar: lugarPorDefecto(), fecha: hoy() }) };
 
   let guardada = null;
   const ok = await formModal({
-    titulo: `${editando ? 'Editar' : 'Nueva'}: ${modelo.nombre}`, ancho: true, campos, valores,
+    titulo: `${editando ? 'Editar' : copiaDe ? 'Copia de' : 'Nueva'}: ${modelo.nombre}`, ancho: true, campos, valores,
     textoGuardar: editando ? 'Guardar cambios' : 'Guardar borrador',
     alAbrir: (form) => {
-      let editadoAMano = editando;
+      let editadoAMano = !!base;
       const area = form.elements.cuerpo;
       const regenerar = () => { area.value = modelo.texto(leerDatos(form), contexto(form.elements)); };
       const boton = document.createElement('button');
@@ -285,7 +286,7 @@ async function renderDetalle(cont, { id, query }) {
 
   async function archivar() {
     const ok = await confirmar(
-      borrador ? '¿Descartar este borrador? Se archiva sin número y no se borra.' : `¿Archivar el documento N° ${numTxt(nota)}? Ya no se podrá modificar. Nunca se borra.`,
+      borrador ? '¿Descartar este borrador? Se archiva sin número y no se borra. Después podés restaurarlo.' : `¿Archivar el documento N° ${numTxt(nota)}? Dejará de estar activo. Nunca se borra y se puede restaurar.`,
       { textoOk: borrador ? 'Descartar' : 'Archivar', peligro: true }
     );
     if (!ok) return;
@@ -296,6 +297,26 @@ async function renderDetalle(cont, { id, query }) {
     } catch (e) { toast(errorAmigable(e), 'error'); }
   }
 
+  async function restaurar() {
+    const ok = await confirmar(
+      nota.numero ? `¿Restaurar la nota N° ${numTxt(nota)}? Vuelve a quedar emitida con el mismo número.` : '¿Restaurar este borrador? Vuelve a la lista de borradores.',
+      { textoOk: 'Restaurar', titulo: 'Restaurar' }
+    );
+    if (!ok) return;
+    try {
+      await q(sb.from('notas').update({ estado: nota.numero ? 'emitida' : 'borrador' }).eq('id', id));
+      toast('Nota restaurada.', 'ok');
+      await renderDetalle(cont, { id, query: {} });
+    } catch (e) {
+      toast(faltaMigracion(e) || /restaurar|archivada/i.test(e?.message || '') ? `${errorAmigable(e)} (¿Ejecutaste supabase/05-notas-restaurar.sql?)` : errorAmigable(e), 'error');
+    }
+  }
+
+  async function duplicar() {
+    const n = await abrirForm({ tipo: nota.tipo, copiaDe: nota });
+    if (n) { toast('Copia guardada como borrador.', 'ok'); location.hash = `#/notas/${n.id}`; }
+  }
+
   cont.innerHTML = `
     <div class="no-imprimir" style="margin-bottom:10px"><a href="#/notas">← Notas y certificados</a></div>
     ${encabezado(`${modelo.nombre}${numTxt(nota) ? ` N° ${numTxt(nota)}` : ''}`, `${fmtFecha(nota.fecha)} · ${ESTADOS_NOTA[nota.estado][0]}`, `
@@ -303,10 +324,12 @@ async function renderDetalle(cont, { id, query }) {
       ${driveActivo && escribe ? '<button class="btn sec" id="b-drive">☁ Guardar en Drive</button>' : ''}
       ${escribe && borrador ? '<button class="btn sec" id="b-edit">✏️ Editar</button>' : ''}
       ${puedeEmitir && borrador ? '<button class="btn verde" id="b-emitir">✔ Emitir</button>' : ''}
+      ${escribe ? '<button class="btn sec" id="b-dup">⧉ Duplicar</button>' : ''}
+      ${puedeEmitir && nota.estado === 'archivada' ? '<button class="btn verde" id="b-rest">↩ Restaurar</button>' : ''}
       ${puedeEmitir && nota.estado !== 'archivada' ? `<button class="btn rojo" id="b-arch">${borrador ? 'Descartar' : 'Archivar'}</button>` : ''}`)}
     ${borrador ? '<div class="aviso warn">Borrador: todavía no tiene número. Revisalo y, cuando esté listo, tocá "Emitir".</div>' : ''}
     ${nota.estado === 'emitida' ? '<div class="aviso ok">🔒 Emitida: está protegida y no se puede modificar. Si hay un error, archivala y redactá una nueva.</div>' : ''}
-    ${nota.estado === 'archivada' ? '<div class="aviso info">🗄 Archivada: forma parte del archivo histórico.</div>' : ''}
+    ${nota.estado === 'archivada' ? `<div class="aviso info">🗄 Archivada: no se puede modificar. ${puedeEmitir ? (nota.numero ? `Si fue un error, tocá "Restaurar": vuelve a quedar emitida con el mismo N° ${numTxt(nota)}.` : 'Si fue un error, tocá "Restaurar": vuelve a ser un borrador.') : ''}</div>` : ''}
     ${vistaPrevia()}
     <div class="tarjeta mt">
       <div class="enc"><h2>Copias en Drive</h2></div>
@@ -323,6 +346,8 @@ async function renderDetalle(cont, { id, query }) {
   document.getElementById('b-edit')?.addEventListener('click', editar);
   document.getElementById('b-emitir')?.addEventListener('click', emitir);
   document.getElementById('b-arch')?.addEventListener('click', archivar);
+  document.getElementById('b-rest')?.addEventListener('click', restaurar);
+  document.getElementById('b-dup')?.addEventListener('click', duplicar);
   if (query?.drive && escribe && driveActivo) {
     if (await confirmar('Quedó emitida. ¿Querés guardar ahora una copia en PDF en el Drive de la iglesia?', { textoOk: 'Guardar en Drive', titulo: 'Copia en Drive' })) await guardarDrive();
   }

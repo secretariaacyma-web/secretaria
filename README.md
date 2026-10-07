@@ -14,7 +14,7 @@ Documentos, Inventario e Informes aparecen en el menú como "pronto" (Etapas 2 y
 1. En Supabase, abrí el proyecto → **SQL Editor** → **New query**.
 2. Abrí el archivo `supabase/schema.sql`, copiá **todo** el contenido, pegalo y tocá **Run**.
 3. Debe terminar con "Success". Se puede volver a ejecutar sin romper nada.
-4. Después, en consultas nuevas (una por archivo), ejecutá también `supabase/02-archivos-drive.sql` (copias PDF en Drive) `supabase/03-calendario.sql` (calendario y actividades fijas) y `supabase/04-notas.sql` (notas y certificados).
+4. Después, en consultas nuevas (una por archivo), ejecutá también `supabase/02-archivos-drive.sql` (copias PDF en Drive) `supabase/03-calendario.sql` (calendario y actividades fijas) `supabase/04-notas.sql` (notas y certificados), `supabase/05-notas-restaurar.sql` (restaurar notas archivadas) y `supabase/06-inventario.sql` (inventario).
 
 ### 2. Cerrar el registro público
 **Authentication → Sign In / Providers** (o *Providers → Email*) → desactivá **Allow new users to sign up**.
@@ -81,6 +81,16 @@ La primera vez que toques **Guardar en Drive**, Google abre una ventana para aut
 - **PDF con membrete** (logo, Secretaría, ubicación y correo) y firmas tomadas de *Autoridades* (Pastor y Secretario/a). Con **Guardar en Drive** se guarda en la carpeta "Secretaría - Notas".
 - Los datos del membrete (ubicación, correo, lugar de las notas) se cambian en `js/config.js`. El nombre de la iglesia que aparece en los textos se cambia en *Configuración → Datos de la iglesia*.
 - Lo ven y manejan administrador y secretario; el pastor solo las ve.
+- **Archivadas por error:** abrí la nota y tocá **Restaurar** (un borrador descartado vuelve a ser borrador; una nota emitida vuelve a quedar emitida con el mismo número). **Duplicar** crea un borrador nuevo a partir de otra nota.
+
+## Inventario
+- **Bienes** con código automático (INV-0001...), nombre, descripción, categoría (sonido y multimedia, instrumentos, mobiliario, electrodomésticos, cocina, limpieza, otros), cantidad, ubicación (salón, cabina del sonido, patio, baños, otros), estado, responsable, forma y fecha de adquisición y observaciones.
+- **Foto:** se elige desde la aplicación (en el celular, cámara o galería). Se achica, se guarda en el Drive de la iglesia, carpeta **"Secretaría - Inventario"**, con un nombre que se puede buscar, por ejemplo `INV-0007 - Parlante JBL (Sonido y multimedia) - Salón.jpg`, y una miniatura queda en la aplicación para verla e imprimirla en los informes.
+- **Préstamos** con fecha de devolución prevista: se ve quién tiene qué, cuántas unidades, y si está **vencido**. En *Inicio* aparece el aviso de préstamos vencidos. Se registra la devolución con observaciones.
+- **Historial automático** de cada bien: alta, cambios de ubicación, estado y responsable, préstamos, devoluciones, bajas; más reparaciones y notas que se anotan a mano. No se puede modificar ni borrar.
+- **Baja:** un bien nunca se borra; se da de baja con motivo y fecha (y se puede reactivar). No se puede dar de baja con un préstamo sin devolver.
+- **Informes:** PDF del inventario (resumen, agrupado por ubicación o categoría, préstamos vigentes; respeta los filtros), **ficha PDF** de cada bien con foto e historial, y exportación a **Excel**.
+- Lo ven administrador, secretario, pastor y comisión; lo modifican administrador y secretario.
 
 ## Cómo se manejan los usuarios
 1. Creá el usuario en **Supabase → Authentication → Users → Add user** (con *Auto Confirm User*).
@@ -133,14 +143,17 @@ supabase/schema.sql tablas, relaciones, permisos, auditoría
 supabase/02-archivos-drive.sql  registro de copias PDF en Drive
 supabase/03-calendario.sql      eventos y actividades fijas del calendario
 supabase/04-notas.sql           notas y certificados con numeración por año
+supabase/05-notas-restaurar.sql restaurar notas archivadas por error
+supabase/06-inventario.sql      bienes, historial y préstamos del inventario
 js/logo.js, js/notas-modelos.js logo del membrete y modelos de texto
+js/imagen.js                    achica las fotos antes de guardarlas
 ```
 
 **Modelo de datos (resumen):** `personas` es la tabla central. De ella cuelgan `miembros`, `autoridades`, los participantes de `reuniones`, los asistentes y firmantes de `actas` y los responsables de `decisiones`. Todo lleva `iglesia_id`, así que más adelante se pueden sumar Finanzas, Ministerios, Asistencia, etc. como tablas nuevas que apuntan a `personas`, sin tocar lo ya cargado.
 
 ## Hoja de ruta
-- **Etapa 2:** Calendario ✔ y Notas ✔. Sigue: Documentos (archivos en el Drive).
-- **Etapa 3:** Inventario, Informes (mensual en PDF), Búsqueda global.
+- **Etapa 2:** Calendario ✔, Notas ✔ e Inventario ✔. Sigue: Documentos (archivos en el Drive).
+- **Etapa 3:** Informes (mensual en PDF), Búsqueda global.
 - **Después:** Finanzas, ministerios, notificaciones, etc.
 
 ## Seguridad: qué es público y qué no

@@ -80,6 +80,30 @@ export const CATEGORIAS_EVENTO = {
 };
 export const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
+// Inventario
+export const CATEGORIAS_INV = {
+  sonido: 'Sonido y multimedia',
+  instrumentos: 'Instrumentos',
+  mobiliario: 'Mobiliario',
+  electrodomesticos: 'Electrodomésticos',
+  cocina: 'Cocina',
+  limpieza: 'Limpieza',
+  otros: 'Otros',
+};
+export const UBICACIONES_INV = ['Salón', 'Cabina del sonido', 'Patio', 'Baños', 'Otros'];
+export const ESTADOS_BIEN = {
+  bueno: ['Bueno', 'verde'],
+  regular: ['Regular', 'naranja'],
+  malo: ['Malo', 'rojo'],
+  en_reparacion: ['En reparación', 'azul'],
+  baja: ['Baja', ''],
+};
+export const FORMAS_ADQUISICION = { compra: 'Compra', donacion: 'Donación', otra: 'Otra' };
+export const TIPOS_MOV_INV = {
+  alta: 'Alta', ubicacion: 'Cambio de ubicación', estado: 'Cambio de estado', responsable: 'Responsable',
+  prestamo: 'Préstamo', devolucion: 'Devolución', reparacion: 'Reparación', baja: 'Baja', reactivacion: 'Reactivación', nota: 'Nota',
+};
+
 // Menú lateral. "roles" limita quién lo ve; "pronto" marca módulos de etapas siguientes.
 export const MENU = [
   { ruta: 'inicio', texto: 'Inicio', ico: '🏠' },
@@ -90,7 +114,7 @@ export const MENU = [
   { ruta: 'decisiones', texto: 'Decisiones', ico: '✅' },
   { ruta: 'notas', texto: 'Notas', ico: '✉️', roles: ['administrador', 'secretario', 'pastor'] },
   { ruta: 'calendario', texto: 'Calendario', ico: '📅' },
-  { ruta: 'inventario', texto: 'Inventario', ico: '📦', pronto: true },
+  { ruta: 'inventario', texto: 'Inventario', ico: '📦', roles: ['administrador', 'secretario', 'pastor', 'comision'] },
   { ruta: 'documentos', texto: 'Documentos', ico: '🗂️', pronto: true },
   { ruta: 'informes', texto: 'Informes', ico: '📊', pronto: true },
   { ruta: 'configuracion', texto: 'Configuración', ico: '⚙️' },

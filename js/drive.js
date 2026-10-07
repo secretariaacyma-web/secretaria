@@ -87,15 +87,18 @@ async function asegurarCarpeta(nombre) {
   return creada.id;
 }
 
-/** Sube un PDF (Blob) a una carpeta de la iglesia (por defecto la de actas). Devuelve { id, name, webViewLink }. */
-export async function subirPDF(blob, nombre, carpeta = CONFIG.DRIVE_CARPETA || 'Secretaría - Actas') {
+/** Pide el permiso de Google ahora (debe llamarse desde un clic). Sirve para adelantar la ventana de acceso. */
+export const autorizarDrive = () => obtenerToken();
+
+/** Sube un archivo (Blob) a una carpeta de la iglesia. Devuelve { id, name, webViewLink }. */
+export async function subirArchivo(blob, nombre, carpeta, mime, descripcion = '') {
   await obtenerToken(); // primero la autorización, para que la ventana salga ya
   const padre = await asegurarCarpeta(carpeta);
   const limite = `secretaria_${Math.random().toString(36).slice(2)}`;
-  const metadatos = JSON.stringify({ name: nombre, parents: [padre], mimeType: 'application/pdf' });
+  const metadatos = JSON.stringify({ name: nombre, parents: [padre], mimeType: mime, ...(descripcion ? { description: descripcion } : {}) });
   const cuerpo = new Blob([
     `--${limite}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadatos}\r\n`,
-    `--${limite}\r\nContent-Type: application/pdf\r\n\r\n`,
+    `--${limite}\r\nContent-Type: ${mime}\r\n\r\n`,
     blob,
     `\r\n--${limite}--`,
   ]);
@@ -105,3 +108,7 @@ export async function subirPDF(blob, nombre, carpeta = CONFIG.DRIVE_CARPETA || '
     body: cuerpo,
   });
 }
+
+/** Sube un PDF (Blob) a una carpeta de la iglesia (por defecto la de actas). Devuelve { id, name, webViewLink }. */
+export const subirPDF = (blob, nombre, carpeta = CONFIG.DRIVE_CARPETA || 'Secretaría - Actas') =>
+  subirArchivo(blob, nombre, carpeta, 'application/pdf');

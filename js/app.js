@@ -18,7 +18,7 @@ const MODULOS = {
   configuracion: () => import('./modules/configuracion.js'),
   notas: () => import('./modules/notas.js'),
   calendario: () => import('./modules/calendario.js'),
-  inventario: () => import('./modules/pronto.js'),
+  inventario: () => import('./modules/inventario.js'),
   documentos: () => import('./modules/pronto.js'),
   informes: () => import('./modules/pronto.js'),
 };

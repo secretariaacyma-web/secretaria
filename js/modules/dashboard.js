@@ -31,6 +31,13 @@ export async function render(cont) {
     agenda = (await eventosEntre(h, sumarDias(h, 6))).filter((e) => !e.cancelado);
   } catch { /* calendario no instalado */ }
 
+  // Préstamos de inventario con la devolución vencida (si el inventario no está instalado, se omite).
+  let prestVenc = 0;
+  try {
+    const r = await sb.from('inventario_prestamos').select('id', { count: 'exact', head: true }).is('devuelto_en', null).lt('fecha_devolucion_prevista', h);
+    if (!r.error) prestVenc = r.count || 0;
+  } catch { /* inventario no instalado */ }
+
   const conActa = new Set(actasConReunion.map((a) => a.reunion_id));
   const sinActa = realizadas.filter((r) => !conActa.has(r.id));
   const vencidas = decisiones.filter((d) => d.fecha_limite && d.fecha_limite < h);
@@ -39,6 +46,7 @@ export async function render(cont) {
   if (vencidas.length) tareas.push({ n: vencidas.length, txt: vencidas.length === 1 ? 'decisión vencida' : 'decisiones vencidas', href: '#/decisiones?estado=vencidas', tipo: 'rojo' });
   if (sinActa.length) tareas.push({ n: sinActa.length, txt: sinActa.length === 1 ? 'reunión realizada sin acta' : 'reuniones realizadas sin acta', href: '#/reuniones', tipo: 'naranja' });
   if (vencidasReu.length) tareas.push({ n: vencidasReu.length, txt: vencidasReu.length === 1 ? 'reunión programada con fecha pasada (para cerrar)' : 'reuniones programadas con fecha pasada (para cerrar)', href: '#/reuniones', tipo: 'naranja' });
+  if (prestVenc) tareas.push({ n: prestVenc, txt: prestVenc === 1 ? 'préstamo de inventario sin devolver (vencido)' : 'préstamos de inventario sin devolver (vencidos)', href: '#/inventario?prestamo=vencido', tipo: 'rojo' });
   if (borradores.length) tareas.push({ n: borradores.length, txt: borradores.length === 1 ? 'acta en borrador para aprobar' : 'actas en borrador para aprobar', href: '#/actas', tipo: 'azul' });
 
   const listaVacia = (t) => `<div class="vacio">${esc(t)}</div>`;

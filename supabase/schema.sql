@@ -584,7 +584,7 @@ grant select, insert, delete on
 
 grant execute on function public.mi_iglesia(), public.mi_rol(), public.tiene_rol(variadic text[]) to authenticated;
 
--- Si ya se ejecutaron las migraciones 02 (archivos_drive), 03 (calendario) y 04 (notas), se mantienen sus permisos.
+-- Si ya se ejecutaron las migraciones 02 (archivos_drive), 03 (calendario), 04 (notas) y 06 (inventario), se mantienen sus permisos.
 do $$
 begin
   if to_regclass('public.archivos_drive') is not null then
@@ -595,6 +595,10 @@ begin
   end if;
   if to_regclass('public.notas') is not null then
     execute 'grant select, insert, update on public.notas to authenticated';
+  end if;
+  if to_regclass('public.inventario_bienes') is not null then
+    execute 'grant select, insert, update on public.inventario_bienes, public.inventario_prestamos to authenticated';
+    execute 'grant select, insert on public.inventario_movimientos to authenticated';
   end if;
 end $$;
 
