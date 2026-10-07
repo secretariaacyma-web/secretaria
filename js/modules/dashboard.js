@@ -54,6 +54,7 @@ export async function render(cont) {
       <a href="#/reuniones?nuevo=1">＋ Nueva reunión</a>
       <a href="#/decisiones?nuevo=1">＋ Nueva decisión</a>
       ${agenda ? '<a href="#/calendario?nuevo=1">＋ Nuevo evento</a>' : ''}
+      ${puede('administrador', 'secretario') ? '<a href="#/notas?nuevo=1">＋ Nueva nota</a>' : ''}
     </div>` : ''}
 
     <div class="grilla c4">

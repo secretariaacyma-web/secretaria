@@ -11,7 +11,7 @@ const SUBIDA = 'https://www.googleapis.com/upload/drive/v3/files';
 let token = null;
 let expira = 0;
 let scriptGIS = null;
-let carpetaId = null;
+const carpetas = {}; // nombre de carpeta → id
 
 export const driveDisponible = () => !!CONFIG.GOOGLE_CLIENT_ID;
 
@@ -73,25 +73,24 @@ async function llamar(url, opciones = {}, reintento = true) {
 }
 
 // Busca la carpeta de la aplicación; si no existe, la crea.
-async function asegurarCarpeta() {
-  if (carpetaId) return carpetaId;
-  const nombre = CONFIG.DRIVE_CARPETA || 'Secretaría - Actas';
+async function asegurarCarpeta(nombre) {
+  if (carpetas[nombre]) return carpetas[nombre];
   const q = `mimeType='application/vnd.google-apps.folder' and name='${nombre.replace(/'/g, "\\'")}' and trashed=false`;
   const lista = await llamar(`${API}/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=1`);
-  if (lista.files?.length) { carpetaId = lista.files[0].id; return carpetaId; }
+  if (lista.files?.length) { carpetas[nombre] = lista.files[0].id; return carpetas[nombre]; }
   const creada = await llamar(`${API}/files?fields=id`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: nombre, mimeType: 'application/vnd.google-apps.folder' }),
   });
-  carpetaId = creada.id;
-  return carpetaId;
+  carpetas[nombre] = creada.id;
+  return creada.id;
 }
 
-/** Sube un PDF (Blob) a la carpeta de la iglesia. Devuelve { id, name, webViewLink }. */
-export async function subirPDF(blob, nombre) {
+/** Sube un PDF (Blob) a una carpeta de la iglesia (por defecto la de actas). Devuelve { id, name, webViewLink }. */
+export async function subirPDF(blob, nombre, carpeta = CONFIG.DRIVE_CARPETA || 'Secretaría - Actas') {
   await obtenerToken(); // primero la autorización, para que la ventana salga ya
-  const padre = await asegurarCarpeta();
+  const padre = await asegurarCarpeta(carpeta);
   const limite = `secretaria_${Math.random().toString(36).slice(2)}`;
   const metadatos = JSON.stringify({ name: nombre, parents: [padre], mimeType: 'application/pdf' });
   const cuerpo = new Blob([

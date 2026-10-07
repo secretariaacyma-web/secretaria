@@ -23,4 +23,10 @@ export const CONFIG = {
   GOOGLE_CUENTA: 'secretariaacyma@gmail.com',
   // Nombre de la carpeta que la aplicación crea en el Drive.
   DRIVE_CARPETA: 'Secretaría - Actas',
+  DRIVE_CARPETA_NOTAS: 'Secretaría - Notas',
+
+  // ---- Membrete de los PDF (notas, certificados y actas) ----
+  IGLESIA_LUGAR: 'Lanús',                          // "Lanús, 7 de octubre de 2026"
+  IGLESIA_UBICACION: 'Villa Jardín, Lanús',        // aparece en el membrete
+  IGLESIA_EMAIL: 'secretariaacyma@gmail.com',      // aparece en el membrete
 };

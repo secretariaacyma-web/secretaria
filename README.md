@@ -1,7 +1,7 @@
 # Secretaría de la iglesia — Etapa 1 (MVP)
 
-Plataforma web para la Secretaría: **Inicio, Actas, Miembros, Autoridades, Reuniones, Decisiones, Calendario y Configuración** (usuarios, copia de seguridad, actividad).
-Notas, Documentos, Inventario e Informes aparecen en el menú como "pronto" (Etapas 2 y 3).
+Plataforma web para la Secretaría: **Inicio, Actas, Miembros, Autoridades, Reuniones, Decisiones, Calendario, Notas y Configuración** (usuarios, copia de seguridad, actividad).
+Documentos, Inventario e Informes aparecen en el menú como "pronto" (Etapas 2 y 3).
 
 - **Base de datos:** Supabase (PostgreSQL) — ya creada: `secretaria-acma`.
 - **Aplicación:** archivos HTML/CSS/JS sin instalación, para publicar en GitHub Pages.
@@ -14,7 +14,7 @@ Notas, Documentos, Inventario e Informes aparecen en el menú como "pronto" (Eta
 1. En Supabase, abrí el proyecto → **SQL Editor** → **New query**.
 2. Abrí el archivo `supabase/schema.sql`, copiá **todo** el contenido, pegalo y tocá **Run**.
 3. Debe terminar con "Success". Se puede volver a ejecutar sin romper nada.
-4. Después, en consultas nuevas (una por archivo), ejecutá también `supabase/02-archivos-drive.sql` (copias PDF en Drive) y `supabase/03-calendario.sql` (calendario y actividades fijas).
+4. Después, en consultas nuevas (una por archivo), ejecutá también `supabase/02-archivos-drive.sql` (copias PDF en Drive) `supabase/03-calendario.sql` (calendario y actividades fijas) y `supabase/04-notas.sql` (notas y certificados).
 
 ### 2. Cerrar el registro público
 **Authentication → Sign In / Providers** (o *Providers → Email*) → desactivá **Allow new users to sign up**.
@@ -74,6 +74,14 @@ La primera vez que toques **Guardar en Drive**, Google abre una ventana para aut
 - **Agenda pastoral / privados:** al crear un evento podés tildar *Privado*; solo lo ven administrador, secretario y pastor.
 - En **Inicio** aparece la agenda de los próximos 7 días.
 
+## Notas y certificados
+- **Modelos:** nota general, carta de recomendación, constancia de membresía, convocatoria a reunión o asamblea, y certificados de bautismo, matrimonio y presentación de niños.
+- Se completan los datos y el texto se arma solo (se puede corregir a mano). Si elegís un miembro de la lista, completa nombre y DNI.
+- **Borrador → Emitir:** el número se asigna al emitir (Nota N° 1/2026, vuelve a 1 cada año). Cada certificado tiene su propia numeración por año. Una vez emitida queda **protegida**: si hay un error se archiva y se redacta otra.
+- **PDF con membrete** (logo, Secretaría, ubicación y correo) y firmas tomadas de *Autoridades* (Pastor y Secretario/a). Con **Guardar en Drive** se guarda en la carpeta "Secretaría - Notas".
+- Los datos del membrete (ubicación, correo, lugar de las notas) se cambian en `js/config.js`. El nombre de la iglesia que aparece en los textos se cambia en *Configuración → Datos de la iglesia*.
+- Lo ven y manejan administrador y secretario; el pastor solo las ve.
+
 ## Cómo se manejan los usuarios
 1. Creá el usuario en **Supabase → Authentication → Users → Add user** (con *Auto Confirm User*).
 2. Entrá a **Configuración → Usuarios y permisos** de la aplicación. Ahí aparece como *Pendiente*: asignale el **rol** y tildá **Acceso**.
@@ -124,12 +132,14 @@ js/
 supabase/schema.sql tablas, relaciones, permisos, auditoría
 supabase/02-archivos-drive.sql  registro de copias PDF en Drive
 supabase/03-calendario.sql      eventos y actividades fijas del calendario
+supabase/04-notas.sql           notas y certificados con numeración por año
+js/logo.js, js/notas-modelos.js logo del membrete y modelos de texto
 ```
 
 **Modelo de datos (resumen):** `personas` es la tabla central. De ella cuelgan `miembros`, `autoridades`, los participantes de `reuniones`, los asistentes y firmantes de `actas` y los responsables de `decisiones`. Todo lleva `iglesia_id`, así que más adelante se pueden sumar Finanzas, Ministerios, Asistencia, etc. como tablas nuevas que apuntan a `personas`, sin tocar lo ya cargado.
 
 ## Hoja de ruta
-- **Etapa 2:** Calendario ✔. Siguen: Notas (con plantillas y PDF) y Documentos (archivos en el Drive).
+- **Etapa 2:** Calendario ✔ y Notas ✔. Sigue: Documentos (archivos en el Drive).
 - **Etapa 3:** Inventario, Informes (mensual en PDF), Búsqueda global.
 - **Después:** Finanzas, ministerios, notificaciones, etc.
 

@@ -2,6 +2,9 @@
 // Usa las fuentes estándar Times (vienen incluidas en cualquier lector de PDF),
 // así que el archivo es liviano y el texto se puede seleccionar y buscar.
 
+import { CONFIG } from './config.js';
+import { LOGO } from './logo.js';
+
 const A4 = [595.28, 841.89];
 const MARGEN_X = 62;      // ~2,2 cm
 const MARGEN_SUP = 64;
@@ -98,6 +101,7 @@ class Documento {
       this.asegurar(size * 1.4);
       let x = x0;
       if (align === 'center') x = x0 + (w - ancho(l, f, size)) / 2;
+      else if (align === 'right') x = x0 + w - ancho(l, f, size);
       this.textoLinea(l, x, f, size, gris);
       if (!l) this.y -= size * 0.7; // línea en blanco más corta
     }
@@ -115,6 +119,29 @@ class Documento {
       this.y += 1.5;
     }
     this.y += 4;
+  }
+
+  // Membrete: logo a la izquierda, datos de Secretaría a la derecha y línea azul.
+  encabezado() {
+    const top = 34;
+    const h = 50;
+    const w = (h * LOGO.w) / LOGO.h;
+    this.ops.push(`q ${num(w)} 0 0 ${num(h)} ${num(MARGEN_X)} ${num(A4[1] - top - h)} cm /Im1 Do Q`);
+    const lineas = ['Secretaría', CONFIG.IGLESIA_UBICACION, CONFIG.IGLESIA_EMAIL].filter(Boolean);
+    lineas.forEach((t, i) => {
+      const x = MARGEN_X + ANCHO_UTIL - ancho(t, 'R', 8.5);
+      this.ops.push(`BT 0.35 g /F1 8.5 Tf 1 0 0 1 ${num(x)} ${num(A4[1] - (top + 12 + i * 11))} Tm (${escapar(codificar(t))}) Tj ET`);
+    });
+    const yl = A4[1] - (top + h + 8);
+    this.ops.push(`0.12 0.23 0.37 RG 0.9 w ${num(MARGEN_X)} ${num(yl)} m ${num(MARGEN_X + ANCHO_UTIL)} ${num(yl)} l S`);
+    this.y = top + h + 8 + 26;
+  }
+
+  // Marco doble para certificados (solo en la página actual).
+  marco() {
+    const g = (m, w, anchoLinea) => this.ops.push(`0.12 0.23 0.37 RG ${anchoLinea} w ${num(m)} ${num(m)} ${num(A4[0] - 2 * m)} ${num(A4[1] - 2 * m)} re S`);
+    g(24, 0, 1.6);
+    g(29, 0, 0.5);
   }
 
   seccion(titulo) {
@@ -147,9 +174,13 @@ function ensamblar(paginas, { titulo, autor }) {
   objs[6] = `<< /Title (${escapar(codificar(titulo))}) /Author (${escapar(codificar(autor))}) /Creator (Secretaria) /CreationDate (${fecha}) >>`;
   paginas.forEach((ops, i) => {
     const flujo = ops.join('\n');
-    objs[7 + 2 * i] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${A4[0]} ${A4[1]}] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents ${8 + 2 * i} 0 R >>`;
+    objs[7 + 2 * i] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${A4[0]} ${A4[1]}] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> /XObject << /Im1 ${7 + 2 * total} 0 R >> >> /Contents ${8 + 2 * i} 0 R >>`;
     objs[8 + 2 * i] = `<< /Length ${flujo.length} >>\nstream\n${flujo}\nendstream`;
   });
+
+  // Logo: JPEG incrustado tal cual (DCTDecode).
+  const jpg = atob(LOGO.b64);
+  objs[7 + 2 * total] = `<< /Type /XObject /Subtype /Image /Width ${LOGO.w} /Height ${LOGO.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n${jpg}\nendstream`;
 
   let out = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
   const offsets = [];
@@ -164,6 +195,27 @@ function ensamblar(paginas, { titulo, autor }) {
   return new Blob([aBytes(out)], { type: 'application/pdf' });
 }
 
+function dibujarFirmas(doc, firmas, porFila = 3, centrar = false) {
+  const colW = ANCHO_UTIL / (centrar ? Math.max(porFila, 2) : porFila);
+  const inicio = MARGEN_X + (centrar ? (ANCHO_UTIL - colW * porFila) / 2 : 0);
+  for (let i = 0; i < firmas.length; i += porFila) {
+    doc.asegurar(110);
+    doc.espacio(i === 0 ? 46 : 38);
+    const fila = firmas.slice(i, i + porFila);
+    const yLinea = doc.y;
+    fila.forEach((f, k) => {
+      const x = inicio + k * colW;
+      doc.y = yLinea;
+      doc.linea(x + 12, x + colW - 12, 0.7, 0);
+      doc.y += 3;
+      doc.parrafo(f.nombre || ' ', { f: 'B', size: 10, align: 'center', despues: 0, x0: x, w: colW });
+      if (f.cargo) doc.parrafo(f.cargo, { f: 'I', size: 9.5, align: 'center', despues: 0, x0: x, w: colW });
+    });
+    // Baja el cursor hasta debajo del bloque más alto.
+    doc.y = Math.max(doc.y, yLinea + 40);
+  }
+}
+
 /**
  * Genera el PDF de un acta.
  * datos: { iglesia, numero, meta, borrador, asistentes[], ordenDelDia, temas, decisiones[],
@@ -173,7 +225,7 @@ export function generarPDFActa(datos) {
   const doc = new Documento();
   const centro = (t, f, size, despues = 4, gris = 0) => doc.parrafo(t, { f, size, align: 'center', despues, gris });
 
-  centro((datos.iglesia || '').toUpperCase(), 'R', 10, 2, 0.35);
+  doc.encabezado();
   centro(`ACTA N° ${datos.numero}`, 'B', 21, 2);
   centro(datos.meta, 'R', 11, 4);
   if (datos.borrador) centro('BORRADOR - sin validez hasta su aprobación', 'I', 10, 4, 0.4);
@@ -195,26 +247,7 @@ export function generarPDFActa(datos) {
   doc.seccion('Observaciones');
   doc.parrafo(datos.observaciones || '—');
 
-  if (datos.firmas.length) {
-    const porFila = 3;
-    const colW = ANCHO_UTIL / porFila;
-    for (let i = 0; i < datos.firmas.length; i += porFila) {
-      doc.asegurar(110);
-      doc.espacio(i === 0 ? 46 : 38);
-      const fila = datos.firmas.slice(i, i + porFila);
-      const yLinea = doc.y;
-      fila.forEach((f, k) => {
-        const x = MARGEN_X + k * colW;
-        doc.y = yLinea;
-        doc.linea(x + 12, x + colW - 12, 0.7, 0);
-        doc.y += 3;
-        doc.parrafo(f.nombre, { f: 'B', size: 10, align: 'center', despues: 0, x0: x, w: colW });
-        if (f.cargo) doc.parrafo(f.cargo, { f: 'I', size: 9.5, align: 'center', despues: 0, x0: x, w: colW });
-      });
-      // Baja el cursor hasta debajo del bloque más alto.
-      doc.y = Math.max(doc.y, yLinea + 40);
-    }
-  }
+  dibujarFirmas(doc, datos.firmas);
 
   if (datos.aprobacion) {
     doc.espacio(24);
@@ -231,4 +264,46 @@ export function generarPDFActa(datos) {
   });
 
   return ensamblar(doc.paginas, { titulo: `Acta N° ${datos.numero}`, autor: datos.iglesia || 'Secretaría' });
+}
+
+/**
+ * Genera el PDF de una nota o certificado.
+ * datos: { iglesia, certificado, titulo, numero (texto "1/2026" o null), borrador, fechaTxt,
+ *          destinatario, asunto, cuerpo, firmas:[{nombre,cargo}] }
+ */
+export function generarPDFNota(datos) {
+  const doc = new Documento();
+  doc.encabezado();
+  const aviso = 'BORRADOR - sin número ni validez hasta su emisión';
+
+  if (datos.certificado) {
+    doc.marco();
+    doc.espacio(34);
+    doc.parrafo(datos.titulo.toUpperCase(), { f: 'B', size: 21, align: 'center', despues: 4 });
+    doc.parrafo(datos.numero ? `Certificado N° ${datos.numero}` : aviso, { f: 'I', size: 10.5, align: 'center', gris: 0.4, despues: 40 });
+    doc.parrafo(datos.cuerpo, { size: 14.5, align: 'center', despues: 10, x0: MARGEN_X + 16, w: ANCHO_UTIL - 32 });
+    doc.espacio(26);
+    doc.parrafo(datos.fechaTxt, { size: 12.5, align: 'center', despues: 0 });
+    doc.espacio(40);
+  } else {
+    doc.parrafo(datos.fechaTxt, { size: 11.5, align: 'right', despues: 14 });
+    doc.parrafo(datos.numero ? `Nota N° ${datos.numero}` : 'Nota (borrador)', { f: 'B', size: 11.5, despues: datos.numero ? 14 : 2 });
+    if (!datos.numero) doc.parrafo(aviso, { f: 'I', size: 9.5, gris: 0.4, despues: 12 });
+    doc.parrafo(datos.destinatario, { size: 11.5, despues: 12 });
+    doc.parrafo(`Asunto: ${datos.asunto}`, { f: 'B', size: 11.5, despues: 16 });
+    doc.parrafo(datos.cuerpo, { size: 11.5, despues: 6 });
+  }
+
+  dibujarFirmas(doc, datos.firmas, Math.min(Math.max(datos.firmas.length, 1), 3), true);
+
+  const total = doc.paginas.length;
+  doc.paginas.forEach((ops, i) => {
+    const texto = `Secretaría - ${datos.iglesia || ''}${total > 1 ? `  -  Página ${i + 1} de ${total}` : ''}`;
+    const x = (A4[0] - ancho(texto, 'I', 9)) / 2;
+    ops.push(`0.6 G 0.4 w ${MARGEN_X} 52 m ${MARGEN_X + ANCHO_UTIL} 52 l S`);
+    ops.push(`BT 0.4 g /F3 9 Tf 1 0 0 1 ${num(x)} 38 Tm (${escapar(codificar(texto))}) Tj ET`);
+  });
+
+  const t = datos.certificado ? datos.titulo : `Nota ${datos.numero || '(borrador)'}`;
+  return ensamblar(doc.paginas, { titulo: t, autor: datos.iglesia || 'Secretaría' });
 }

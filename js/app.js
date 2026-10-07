@@ -16,7 +16,7 @@ const MODULOS = {
   reuniones: () => import('./modules/reuniones.js'),
   decisiones: () => import('./modules/decisiones.js'),
   configuracion: () => import('./modules/configuracion.js'),
-  notas: () => import('./modules/pronto.js'),
+  notas: () => import('./modules/notas.js'),
   calendario: () => import('./modules/calendario.js'),
   inventario: () => import('./modules/pronto.js'),
   documentos: () => import('./modules/pronto.js'),
@@ -99,6 +99,8 @@ function dibujarApp() {
   document.getElementById('btn-menu').onclick = abrirMenuMovil;
   document.getElementById('velo').onclick = cerrarMenuMovil;
   document.getElementById('btn-salir').onclick = salir;
+  // Al tocar una sección del menú (incluso la actual) se cierra el menú en el celular.
+  document.querySelectorAll('.lateral nav a').forEach((a) => a.addEventListener('click', cerrarMenuMovil));
   navegar();
 }
 

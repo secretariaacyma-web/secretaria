@@ -88,7 +88,7 @@ export const MENU = [
   { ruta: 'autoridades', texto: 'Autoridades', ico: '🏛️' },
   { ruta: 'reuniones', texto: 'Reuniones', ico: '🗓️' },
   { ruta: 'decisiones', texto: 'Decisiones', ico: '✅' },
-  { ruta: 'notas', texto: 'Notas', ico: '✉️', pronto: true },
+  { ruta: 'notas', texto: 'Notas', ico: '✉️', roles: ['administrador', 'secretario', 'pastor'] },
   { ruta: 'calendario', texto: 'Calendario', ico: '📅' },
   { ruta: 'inventario', texto: 'Inventario', ico: '📦', pronto: true },
   { ruta: 'documentos', texto: 'Documentos', ico: '🗂️', pronto: true },

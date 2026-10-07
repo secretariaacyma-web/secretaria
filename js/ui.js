@@ -142,7 +142,7 @@ function leerValores(form, campos) {
   return out;
 }
 
-export function formModal({ titulo, campos, valores = {}, guardar, textoGuardar = 'Guardar', ancho = false, aviso = '' }) {
+export function formModal({ titulo, campos, valores = {}, guardar, textoGuardar = 'Guardar', ancho = false, aviso = '', alAbrir = null }) {
   return new Promise((resolve) => {
     const cuerpo = `
       <form id="form-modal" novalidate>
@@ -157,6 +157,7 @@ export function formModal({ titulo, campos, valores = {}, guardar, textoGuardar 
     const form = m.el.querySelector('form');
     const errBox = m.el.querySelector('.form-error');
     const btn = m.el.querySelector('[data-guardar]');
+    if (alAbrir) alAbrir(form, m);
     m.el.querySelector('[data-cancelar]').onclick = () => { m.cerrar(); resolve(null); };
     m.el.querySelector('[data-cerrar]').onclick = () => { m.cerrar(); resolve(null); };
     form.addEventListener('submit', async (ev) => {
