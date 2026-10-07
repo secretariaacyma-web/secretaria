@@ -104,6 +104,18 @@ export const TIPOS_MOV_INV = {
   prestamo: 'Préstamo', devolucion: 'Devolución', reparacion: 'Reparación', baja: 'Baja', reactivacion: 'Reactivación', nota: 'Nota',
 };
 
+// Documentos
+export const CATEGORIAS_DOC = {
+  estatutos: 'Estatutos y reglamentos',
+  actas: 'Actas escaneadas',
+  legales: 'Legales y contratos',
+  seguros: 'Seguros y habilitaciones',
+  facturas: 'Facturas y comprobantes',
+  inmuebles: 'Planos e inmuebles',
+  fotos: 'Fotos y eventos',
+  otros: 'Otros',
+};
+
 // Menú lateral. "roles" limita quién lo ve; "pronto" marca módulos de etapas siguientes.
 export const MENU = [
   { ruta: 'inicio', texto: 'Inicio', ico: '🏠' },
@@ -115,7 +127,7 @@ export const MENU = [
   { ruta: 'notas', texto: 'Notas', ico: '✉️', roles: ['administrador', 'secretario', 'pastor'] },
   { ruta: 'calendario', texto: 'Calendario', ico: '📅' },
   { ruta: 'inventario', texto: 'Inventario', ico: '📦', roles: ['administrador', 'secretario', 'pastor', 'comision'] },
-  { ruta: 'documentos', texto: 'Documentos', ico: '🗂️', pronto: true },
+  { ruta: 'documentos', texto: 'Documentos', ico: '🗂️', roles: ['administrador', 'secretario', 'pastor', 'comision'] },
   { ruta: 'informes', texto: 'Informes', ico: '📊', pronto: true },
   { ruta: 'configuracion', texto: 'Configuración', ico: '⚙️' },
 ];

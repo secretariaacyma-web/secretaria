@@ -19,7 +19,7 @@ const MODULOS = {
   notas: () => import('./modules/notas.js'),
   calendario: () => import('./modules/calendario.js'),
   inventario: () => import('./modules/inventario.js'),
-  documentos: () => import('./modules/pronto.js'),
+  documentos: () => import('./modules/documentos.js'),
   informes: () => import('./modules/pronto.js'),
 };
 

@@ -14,7 +14,7 @@ Documentos, Inventario e Informes aparecen en el menú como "pronto" (Etapas 2 y
 1. En Supabase, abrí el proyecto → **SQL Editor** → **New query**.
 2. Abrí el archivo `supabase/schema.sql`, copiá **todo** el contenido, pegalo y tocá **Run**.
 3. Debe terminar con "Success". Se puede volver a ejecutar sin romper nada.
-4. Después, en consultas nuevas (una por archivo), ejecutá también `supabase/02-archivos-drive.sql` (copias PDF en Drive) `supabase/03-calendario.sql` (calendario y actividades fijas) `supabase/04-notas.sql` (notas y certificados), `supabase/05-notas-restaurar.sql` (restaurar notas archivadas) y `supabase/06-inventario.sql` (inventario).
+4. Después, en consultas nuevas (una por archivo), ejecutá también `supabase/02-archivos-drive.sql` (copias PDF en Drive) `supabase/03-calendario.sql` (calendario y actividades fijas) `supabase/04-notas.sql` (notas y certificados), `supabase/05-notas-restaurar.sql` (restaurar notas archivadas) `supabase/06-inventario.sql` (inventario) y `supabase/07-documentos.sql` (documentos).
 
 ### 2. Cerrar el registro público
 **Authentication → Sign In / Providers** (o *Providers → Email*) → desactivá **Allow new users to sign up**.
@@ -92,6 +92,17 @@ La primera vez que toques **Guardar en Drive**, Google abre una ventana para aut
 - **Informes:** PDF del inventario (resumen, agrupado por ubicación o categoría, préstamos vigentes; respeta los filtros), **ficha PDF** de cada bien con foto e historial, y exportación a **Excel**.
 - Lo ven administrador, secretario, pastor y comisión; lo modifican administrador y secretario.
 
+## Documentos
+- **Subir documento:** PDF, fotos, Word, Excel… (hasta 50 MB). Se guarda en el Drive de la iglesia, carpeta **"Secretaría - Documentos"**, en una subcarpeta según la categoría, con un nombre que se puede buscar, por ejemplo `2026-03-15 - Seguros y habilitaciones - Seguro del templo.pdf`. Las fotos pesadas se achican solas.
+- **Categorías:** Estatutos y reglamentos, Actas escaneadas, Legales y contratos, Seguros y habilitaciones, Facturas y comprobantes, Planos e inmuebles, Fotos y eventos, Otros.
+- **Etiquetas, descripción y buscador** (título, descripción, etiquetas), con filtros por categoría, año y vencimiento.
+- **Vencimientos:** al cargar un documento se puede indicar cuándo vence (seguros, habilitaciones, contratos). Se marca *vencido* o *vence en N días* y en *Inicio* aparece el aviso 30 días antes.
+- **Restringido:** al cargar o editar un documento se puede tildar *Restringido*; entonces solo lo ven administrador, secretario y pastor (la comisión no).
+- **Enlaces:** para videos o archivos muy pesados, subilos a YouTube (como *no listado*) o al Drive a mano y registralos con **Agregar enlace**: quedan con categoría, etiquetas y buscador como cualquier otro documento.
+- **Copias automáticas:** una pestaña lista las actas, notas, certificados y fotos de inventario que la plataforma guardó en el Drive.
+- El archivo subido no se reemplaza: si hay que cambiarlo se archiva el documento y se sube uno nuevo. Nada se borra; *Archivar* se deshace con *Restaurar*.
+- Lo ven administrador, secretario, pastor y comisión; lo modifican administrador y secretario.
+
 ## Cómo se manejan los usuarios
 1. Creá el usuario en **Supabase → Authentication → Users → Add user** (con *Auto Confirm User*).
 2. Entrá a **Configuración → Usuarios y permisos** de la aplicación. Ahí aparece como *Pendiente*: asignale el **rol** y tildá **Acceso**.
@@ -145,6 +156,7 @@ supabase/03-calendario.sql      eventos y actividades fijas del calendario
 supabase/04-notas.sql           notas y certificados con numeración por año
 supabase/05-notas-restaurar.sql restaurar notas archivadas por error
 supabase/06-inventario.sql      bienes, historial y préstamos del inventario
+supabase/07-documentos.sql      documentos, vencimientos y enlaces
 js/logo.js, js/notas-modelos.js logo del membrete y modelos de texto
 js/imagen.js                    achica las fotos antes de guardarlas
 ```
@@ -152,7 +164,7 @@ js/imagen.js                    achica las fotos antes de guardarlas
 **Modelo de datos (resumen):** `personas` es la tabla central. De ella cuelgan `miembros`, `autoridades`, los participantes de `reuniones`, los asistentes y firmantes de `actas` y los responsables de `decisiones`. Todo lleva `iglesia_id`, así que más adelante se pueden sumar Finanzas, Ministerios, Asistencia, etc. como tablas nuevas que apuntan a `personas`, sin tocar lo ya cargado.
 
 ## Hoja de ruta
-- **Etapa 2:** Calendario ✔, Notas ✔ e Inventario ✔. Sigue: Documentos (archivos en el Drive).
+- **Etapa 2:** Calendario ✔, Notas ✔, Inventario ✔ y Documentos ✔.
 - **Etapa 3:** Informes (mensual en PDF), Búsqueda global.
 - **Después:** Finanzas, ministerios, notificaciones, etc.
 

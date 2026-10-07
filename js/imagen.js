@@ -36,3 +36,11 @@ export async function procesarFoto(archivo) {
   if (img.close) img.close();
   return { grande, miniatura };
 }
+
+// Achica una foto (para documentos): JPEG de hasta "maxLado" px. Devuelve un Blob.
+export async function reducirImagen(archivo, maxLado = 2400) {
+  const img = await cargar(archivo);
+  const blob = await new Promise((res, rej) => dibujar(img, maxLado).toBlob((b) => (b ? res(b) : rej(new Error('No se pudo preparar la foto.'))), 'image/jpeg', 0.85));
+  if (img.close) img.close();
+  return blob;
+}

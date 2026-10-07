@@ -5,9 +5,9 @@ import { esc, fmtFechaHora, encabezado, formModal, toast, errorAmigable, descarg
 
 const TABLAS_RESPALDO = [
   'iglesias', 'perfiles', 'personas', 'miembros', 'autoridades', 'reuniones', 'reunion_participantes',
-  'actas', 'acta_asistentes', 'acta_firmas', 'decisiones', 'archivos_drive', 'actividades_fijas', 'eventos', 'notas', 'inventario_bienes', 'inventario_prestamos', 'inventario_movimientos', 'audit_log',
+  'actas', 'acta_asistentes', 'acta_firmas', 'decisiones', 'archivos_drive', 'actividades_fijas', 'eventos', 'notas', 'inventario_bienes', 'inventario_prestamos', 'inventario_movimientos', 'documentos', 'audit_log',
 ];
-const OPCIONALES = ['archivos_drive', 'actividades_fijas', 'eventos', 'notas', 'inventario_bienes', 'inventario_prestamos', 'inventario_movimientos']; // tablas de migraciones: si todavía no existen, se omiten
+const OPCIONALES = ['archivos_drive', 'actividades_fijas', 'eventos', 'notas', 'inventario_bienes', 'inventario_prestamos', 'inventario_movimientos', 'documentos']; // tablas de migraciones: si todavía no existen, se omiten
 const CLAVE_RESPALDO = 'secretaria_ultimo_respaldo';
 
 async function leerTodo(tabla) {
@@ -139,7 +139,7 @@ export async function render(cont) {
       const ids = [...new Set(data.map((a) => a.usuario_id).filter(Boolean))];
       const perf = ids.length ? await q(sb.from('perfiles').select('id,nombre,email').in('id', ids)) : [];
       const nom = Object.fromEntries(perf.map((p) => [p.id, p.nombre || p.email]));
-      const tablaNom = { personas: 'Persona', miembros: 'Miembro', autoridades: 'Autoridad', reuniones: 'Reunión', actas: 'Acta', decisiones: 'Decisión', eventos: 'Evento', actividades_fijas: 'Actividad fija', notas: 'Nota', inventario_bienes: 'Bien de inventario', inventario_prestamos: 'Préstamo de inventario' };
+      const tablaNom = { personas: 'Persona', miembros: 'Miembro', autoridades: 'Autoridad', reuniones: 'Reunión', actas: 'Acta', decisiones: 'Decisión', eventos: 'Evento', actividades_fijas: 'Actividad fija', notas: 'Nota', inventario_bienes: 'Bien de inventario', inventario_prestamos: 'Préstamo de inventario', documentos: 'Documento' };
       const accion = { INSERT: 'Alta', UPDATE: 'Modificación', DELETE: 'Baja' };
       box.innerHTML = tablaHTML(
         [

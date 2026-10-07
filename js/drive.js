@@ -72,32 +72,60 @@ async function llamar(url, opciones = {}, reintento = true) {
   return resp.json();
 }
 
-// Busca la carpeta de la aplicación; si no existe, la crea.
-async function asegurarCarpeta(nombre) {
-  if (carpetas[nombre]) return carpetas[nombre];
-  const q = `mimeType='application/vnd.google-apps.folder' and name='${nombre.replace(/'/g, "\\'")}' and trashed=false`;
-  const lista = await llamar(`${API}/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=1`);
-  if (lista.files?.length) { carpetas[nombre] = lista.files[0].id; return carpetas[nombre]; }
+// Busca la carpeta de la aplicación (dentro de "padre", si se indica); si no existe, la crea.
+async function asegurarCarpeta(nombre, padre = null) {
+  const clave = `${padre || 'raiz'}/${nombre}`;
+  if (carpetas[clave]) return carpetas[clave];
+  const filtro = `mimeType='application/vnd.google-apps.folder' and name='${nombre.replace(/'/g, "\\'")}' and trashed=false${padre ? ` and '${padre}' in parents` : ''}`;
+  const lista = await llamar(`${API}/files?q=${encodeURIComponent(filtro)}&fields=files(id,name)&pageSize=1`);
+  if (lista.files?.length) { carpetas[clave] = lista.files[0].id; return carpetas[clave]; }
   const creada = await llamar(`${API}/files?fields=id`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: nombre, mimeType: 'application/vnd.google-apps.folder' }),
+    body: JSON.stringify({ name: nombre, mimeType: 'application/vnd.google-apps.folder', ...(padre ? { parents: [padre] } : {}) }),
   });
-  carpetas[nombre] = creada.id;
+  carpetas[clave] = creada.id;
   return creada.id;
+}
+
+// Carpeta anidada: ['Secretaría - Documentos', 'Seguros y habilitaciones'] → id de la última.
+async function asegurarRuta(ruta) {
+  let padre = null;
+  for (const nombre of ruta) padre = await asegurarCarpeta(nombre, padre);
+  return padre;
 }
 
 /** Pide el permiso de Google ahora (debe llamarse desde un clic). Sirve para adelantar la ventana de acceso. */
 export const autorizarDrive = () => obtenerToken();
 
-/** Sube un archivo (Blob) a una carpeta de la iglesia. Devuelve { id, name, webViewLink }. */
+const LIMITE_SIMPLE = 4 * 1024 * 1024; // hasta 4 MB: subida directa; más: subida reanudable
+
+/** Sube un archivo (Blob) a una carpeta de la iglesia (nombre o ruta ['Carpeta', 'Subcarpeta']). Devuelve { id, name, webViewLink }. */
 export async function subirArchivo(blob, nombre, carpeta, mime, descripcion = '') {
   await obtenerToken(); // primero la autorización, para que la ventana salga ya
-  const padre = await asegurarCarpeta(carpeta);
+  const padre = await asegurarRuta(Array.isArray(carpeta) ? carpeta : [carpeta]);
+  const meta = { name: nombre, parents: [padre], mimeType: mime, ...(descripcion ? { description: descripcion } : {}) };
+
+  if (blob.size > LIMITE_SIMPLE) {
+    const t = await obtenerToken();
+    const ini = await fetch(`${SUBIDA}?uploadType=resumable&fields=id,name,webViewLink`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${t}`, 'Content-Type': 'application/json; charset=UTF-8',
+        'X-Upload-Content-Type': mime, 'X-Upload-Content-Length': String(blob.size),
+      },
+      body: JSON.stringify(meta),
+    });
+    const destino = ini.ok ? ini.headers.get('Location') : null;
+    if (!destino) throw new Error(`Google Drive no aceptó la subida del archivo (${ini.status}). Si es muy pesado, subilo a mano al Drive y registralo como enlace.`);
+    const fin = await fetch(destino, { method: 'PUT', headers: { 'Content-Type': mime }, body: blob });
+    if (!fin.ok) throw new Error(`Google Drive cortó la subida (${fin.status}). Probá de nuevo o registralo como enlace.`);
+    return fin.json();
+  }
+
   const limite = `secretaria_${Math.random().toString(36).slice(2)}`;
-  const metadatos = JSON.stringify({ name: nombre, parents: [padre], mimeType: mime, ...(descripcion ? { description: descripcion } : {}) });
   const cuerpo = new Blob([
-    `--${limite}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadatos}\r\n`,
+    `--${limite}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n`,
     `--${limite}\r\nContent-Type: ${mime}\r\n\r\n`,
     blob,
     `\r\n--${limite}--`,

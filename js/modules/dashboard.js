@@ -38,6 +38,15 @@ export async function render(cont) {
     if (!r.error) prestVenc = r.count || 0;
   } catch { /* inventario no instalado */ }
 
+  // Documentos vencidos o por vencer en 30 días (si Documentos no está instalado, se omite).
+  let docsVenc = 0; let docsPorVencer = 0;
+  try {
+    const lim = new Date(); lim.setDate(lim.getDate() + 30);
+    const limite = `${lim.getFullYear()}-${String(lim.getMonth() + 1).padStart(2, '0')}-${String(lim.getDate()).padStart(2, '0')}`;
+    const r = await sb.from('documentos').select('vence_el').eq('archivado', false).not('vence_el', 'is', null).lte('vence_el', limite);
+    if (!r.error) { docsVenc = r.data.filter((d) => d.vence_el < h).length; docsPorVencer = r.data.length - docsVenc; }
+  } catch { /* documentos no instalado */ }
+
   const conActa = new Set(actasConReunion.map((a) => a.reunion_id));
   const sinActa = realizadas.filter((r) => !conActa.has(r.id));
   const vencidas = decisiones.filter((d) => d.fecha_limite && d.fecha_limite < h);
@@ -47,6 +56,8 @@ export async function render(cont) {
   if (sinActa.length) tareas.push({ n: sinActa.length, txt: sinActa.length === 1 ? 'reunión realizada sin acta' : 'reuniones realizadas sin acta', href: '#/reuniones', tipo: 'naranja' });
   if (vencidasReu.length) tareas.push({ n: vencidasReu.length, txt: vencidasReu.length === 1 ? 'reunión programada con fecha pasada (para cerrar)' : 'reuniones programadas con fecha pasada (para cerrar)', href: '#/reuniones', tipo: 'naranja' });
   if (prestVenc) tareas.push({ n: prestVenc, txt: prestVenc === 1 ? 'préstamo de inventario sin devolver (vencido)' : 'préstamos de inventario sin devolver (vencidos)', href: '#/inventario?prestamo=vencido', tipo: 'rojo' });
+  if (docsVenc) tareas.push({ n: docsVenc, txt: docsVenc === 1 ? 'documento vencido' : 'documentos vencidos', href: '#/documentos?venc=vencidos', tipo: 'rojo' });
+  if (docsPorVencer) tareas.push({ n: docsPorVencer, txt: docsPorVencer === 1 ? 'documento vence en los próximos 30 días' : 'documentos vencen en los próximos 30 días', href: '#/documentos?venc=porvencer', tipo: 'naranja' });
   if (borradores.length) tareas.push({ n: borradores.length, txt: borradores.length === 1 ? 'acta en borrador para aprobar' : 'actas en borrador para aprobar', href: '#/actas', tipo: 'azul' });
 
   const listaVacia = (t) => `<div class="vacio">${esc(t)}</div>`;
