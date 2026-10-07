@@ -128,6 +128,6 @@ export const MENU = [
   { ruta: 'calendario', texto: 'Calendario', ico: '📅' },
   { ruta: 'inventario', texto: 'Inventario', ico: '📦', roles: ['administrador', 'secretario', 'pastor', 'comision'] },
   { ruta: 'documentos', texto: 'Documentos', ico: '🗂️', roles: ['administrador', 'secretario', 'pastor', 'comision'] },
-  { ruta: 'informes', texto: 'Informes', ico: '📊', pronto: true },
+  { ruta: 'informes', texto: 'Informes', ico: '📊', roles: ['administrador', 'secretario', 'pastor'] },
   { ruta: 'configuracion', texto: 'Configuración', ico: '⚙️' },
 ];

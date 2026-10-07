@@ -26,6 +26,7 @@ export const CONFIG = {
   DRIVE_CARPETA_NOTAS: 'Secretaría - Notas',
   DRIVE_CARPETA_INVENTARIO: 'Secretaría - Inventario',
   DRIVE_CARPETA_DOCUMENTOS: 'Secretaría - Documentos',
+  DRIVE_CARPETA_INFORMES: 'Secretaría - Informes',
 
   // ---- Membrete de los PDF (notas, certificados y actas) ----
   IGLESIA_LUGAR: 'Lanús',                          // "Lanús, 7 de octubre de 2026"

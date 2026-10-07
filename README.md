@@ -103,6 +103,13 @@ La primera vez que toques **Guardar en Drive**, Google abre una ventana para aut
 - El archivo subido no se reemplaza: si hay que cambiarlo se archiva el documento y se sube uno nuevo. Nada se borra; *Archivar* se deshace con *Restaurar*.
 - Lo ven administrador, secretario, pastor y comisión; lo modifican administrador y secretario.
 
+## Informes
+- Informe de Secretaría para reuniones y asambleas, con el logo. Se elige el **período** (mensual, trimestral, anual o entre fechas) y los **apartados**: actas, reuniones, decisiones y seguimiento, notas y certificados, miembros, inventario, documentos y eventos especiales.
+- Se arma una **vista previa** en pantalla con cifras y detalle; después se descarga el **PDF** o se guarda una copia en el Drive (carpeta "Secretaría - Informes").
+- Se puede agregar un texto propio en *Observaciones* y las líneas de firma (Secretario/a y Pastor, tomados de *Autoridades*).
+- Los informes se arman con los datos ya cargados: nada nuevo que instalar en la base de datos. Las cifras de "a hoy" (decisiones vencidas, préstamos vencidos, estado de miembros) muestran la situación del día en que se genera el informe. Los eventos privados no se incluyen.
+- Lo generan administrador, secretario y pastor.
+
 ## Cómo se manejan los usuarios
 1. Creá el usuario en **Supabase → Authentication → Users → Add user** (con *Auto Confirm User*).
 2. Entrá a **Configuración → Usuarios y permisos** de la aplicación. Ahí aparece como *Pendiente*: asignale el **rol** y tildá **Acceso**.
@@ -165,7 +172,7 @@ js/imagen.js                    achica las fotos antes de guardarlas
 
 ## Hoja de ruta
 - **Etapa 2:** Calendario ✔, Notas ✔, Inventario ✔ y Documentos ✔.
-- **Etapa 3:** Informes (mensual en PDF), Búsqueda global.
+- **Etapa 3:** Informes ✔. Sigue: Búsqueda global.
 - **Después:** Finanzas, ministerios, notificaciones, etc.
 
 ## Seguridad: qué es público y qué no

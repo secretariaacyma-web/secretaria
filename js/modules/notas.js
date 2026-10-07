@@ -23,7 +23,7 @@ const resumen = (n) => {
 };
 
 // Quién firma: se toma de las autoridades vigentes (Pastor / Secretario).
-async function resolverFirmantes(claves) {
+export async function resolverFirmantes(claves) {
   let aut = [];
   try { aut = await q(sb.from('autoridades').select('persona_id,cargo').is('fecha_fin', null).eq('archivado', false)); } catch { /* sin datos */ }
   const mapa = await mapaPersonas();

@@ -20,7 +20,7 @@ const MODULOS = {
   calendario: () => import('./modules/calendario.js'),
   inventario: () => import('./modules/inventario.js'),
   documentos: () => import('./modules/documentos.js'),
-  informes: () => import('./modules/pronto.js'),
+  informes: () => import('./modules/informes.js'),
 };
 
 function parsearHash() {

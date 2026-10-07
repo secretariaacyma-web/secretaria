@@ -122,7 +122,7 @@ class Documento {
       this.ops.push(`0.75 G 0.4 w ${num(MARGEN_X)} ${num(yTop - alto)} m ${num(MARGEN_X + ANCHO_UTIL)} ${num(yTop - alto)} l S`);
       this.y += alto;
     };
-    this.asegurar(60);
+    this.asegurar(38);
     fila(cabecera, { cab: true });
     filas.forEach((f, i) => fila(f, { zebra: i % 2 === 1 }));
     this.y += 8;
@@ -460,4 +460,42 @@ export function generarPDFFichaBien(datos) {
   }
   pieDePagina(doc, `Ficha ${datos.codigo} - ${datos.iglesia || ''}`);
   return ensamblar(doc.paginas, { titulo: `Ficha ${datos.codigo}`, autor: datos.iglesia || 'Secretaría' }, doc.imagenes);
+}
+
+// ---------------------------------------------------------------- Informes
+/**
+ * Informe de Secretaría.
+ * datos: { iglesia, titulo, periodoTxt, fechaTxt, claves:[[concepto, valor]],
+ *          secciones:[{ titulo, cifras:[[concepto, valor]], tablas:[{ titulo, cols:[{h,w,align}], filas, nota }] }],
+ *          observaciones, firmas:[{nombre,cargo}] }
+ */
+export function generarPDFInforme(datos) {
+  const doc = new Documento();
+  doc.encabezado();
+  doc.parrafo((datos.titulo || 'Informe de Secretaría').toUpperCase(), { f: 'B', size: 18, align: 'center', despues: 2 });
+  doc.parrafo(datos.periodoTxt, { f: 'B', size: 12.5, align: 'center', despues: 2 });
+  doc.parrafo(datos.fechaTxt, { f: 'I', size: 10, align: 'center', gris: 0.35, despues: 8 });
+
+  if (datos.claves?.length) {
+    doc.seccion('Resumen general');
+    doc.tabla([{ h: 'Concepto', w: 360 }, { h: 'Cantidad', w: 111, align: 'right' }], datos.claves, { size: 10 });
+  }
+  for (const s of datos.secciones) {
+    doc.seccion(s.titulo);
+    if (s.cifras?.length) doc.tabla([{ h: 'Concepto', w: 360 }, { h: 'Cantidad', w: 111, align: 'right' }], s.cifras, { size: 10 });
+    for (const t of s.tablas || []) {
+      if (t.titulo) { doc.asegurar(70); doc.parrafo(t.titulo, { f: 'B', size: 10.5, despues: 3 }); }
+      if (t.filas.length) doc.tabla(t.cols, t.filas);
+      else doc.parrafo('Sin registros en el período.', { f: 'I', size: 10, gris: 0.5 });
+      if (t.nota) doc.parrafo(t.nota, { f: 'I', size: 9, gris: 0.4, despues: 4 });
+    }
+    if (!s.cifras?.length && !(s.tablas || []).length) doc.parrafo('Sin movimientos en el período.', { f: 'I', size: 10, gris: 0.5 });
+  }
+  if (datos.observaciones) {
+    doc.seccion('Observaciones');
+    doc.parrafo(datos.observaciones, { size: 11 });
+  }
+  if (datos.firmas?.length) dibujarFirmas(doc, datos.firmas, Math.min(datos.firmas.length, 3), true);
+  pieDePagina(doc, `Informe de Secretaría - ${datos.iglesia || ''}`);
+  return ensamblar(doc.paginas, { titulo: `${datos.titulo || 'Informe'} - ${datos.periodoTxt}`, autor: datos.iglesia || 'Secretaría' }, doc.imagenes);
 }

@@ -204,8 +204,8 @@ async function renderLista(cont, { query }) {
     box.innerHTML = '<div class="cargando">Cargando…</div>';
     try {
       const filas = await q(sb.from('archivos_drive').select('*').order('creado_en', { ascending: false }).limit(300));
-      const tipo = (a) => (a.acta_id ? 'Acta' : a.nota_id ? 'Nota o certificado' : a.bien_id ? 'Foto de inventario' : 'Otro');
-      box.innerHTML = `<div class="aviso info">Acá aparecen las copias que la plataforma guarda sola en el Drive: actas, notas, certificados y fotos del inventario.</div>
+      const tipo = (a) => (/^Informe/i.test(a.nombre) && !a.acta_id && !a.nota_id && !a.bien_id ? 'Informe' : a.acta_id ? 'Acta' : a.nota_id ? 'Nota o certificado' : a.bien_id ? 'Foto de inventario' : 'Otro');
+      box.innerHTML = `<div class="aviso info">Acá aparecen las copias que la plataforma guarda sola en el Drive: actas, notas, certificados, informes y fotos del inventario.</div>
         <div class="tarjeta"><div class="cuerpo sin-pad">${tablaHTML([
           { h: 'Guardada', f: (a) => fmtFechaHora(a.creado_en) },
           { h: 'Archivo', f: (a) => `<b>${esc(a.nombre)}</b>` },
