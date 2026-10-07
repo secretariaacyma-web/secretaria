@@ -144,6 +144,7 @@ export async function render(cont, { query }) {
   document.getElementById('f-resp').innerHTML += usados.map((id) => `<option value="${id}">${esc(nombreCompleto(personas[id]))}</option>`).join('');
   const sel = document.getElementById('f-estado');
   if (query?.estado) sel.value = query.estado;
+  if (query?.q) { document.getElementById('f-txt').value = query.q; document.getElementById('f-arch').checked = verArchivadas = true; }
   pintar();
   document.getElementById('f-txt').addEventListener('input', debounce(pintar, 150));
   sel.onchange = pintar;

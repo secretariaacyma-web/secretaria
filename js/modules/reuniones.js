@@ -183,4 +183,5 @@ export async function render(cont, { query }) {
   pintar();
   document.getElementById('b-nueva')?.addEventListener('click', nueva);
   if (query?.nuevo && escribe) nueva();
+  if (query?.ver) { const r = filas.find((x) => x.id === query.ver); if (r) detalle(r); }
 }

@@ -409,4 +409,9 @@ export async function render(cont, { query }) {
   }
   pintar();
   if (query?.nuevo && escribe) nuevoEvento(query.fecha || h);
+  if (query?.dia && /^\d{4}-\d{2}-\d{2}$/.test(query.dia)) {
+    mes = aFecha(query.dia); mes.setDate(1);
+    await recargar();
+    abrirDia(query.dia);
+  }
 }

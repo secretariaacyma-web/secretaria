@@ -1,7 +1,7 @@
 # Secretaría de la iglesia — Etapa 1 (MVP)
 
 Plataforma web para la Secretaría: **Inicio, Actas, Miembros, Autoridades, Reuniones, Decisiones, Calendario, Notas y Configuración** (usuarios, copia de seguridad, actividad).
-Documentos, Inventario e Informes aparecen en el menú como "pronto" (Etapas 2 y 3).
+Todos los módulos de las Etapas 1 a 3 están disponibles.
 
 - **Base de datos:** Supabase (PostgreSQL) — ya creada: `secretaria-acma`.
 - **Aplicación:** archivos HTML/CSS/JS sin instalación, para publicar en GitHub Pages.
@@ -103,6 +103,12 @@ La primera vez que toques **Guardar en Drive**, Google abre una ventana para aut
 - El archivo subido no se reemplaza: si hay que cambiarlo se archiva el documento y se sube uno nuevo. Nada se borra; *Archivar* se deshace con *Restaurar*.
 - Lo ven administrador, secretario, pastor y comisión; lo modifican administrador y secretario.
 
+## Búsqueda global
+- La caja **Buscar en todo…** está arriba del menú lateral (también en el celular). Escribís y apretás Enter.
+- Busca en actas, reuniones, decisiones, notas, miembros, autoridades, calendario, inventario y documentos, **sin importar mayúsculas ni tildes**, y deben aparecer **todas** las palabras escritas.
+- Resultados agrupados por sección, con la coincidencia resaltada. Tocás uno y se abre su ficha. Incluye lo archivado (marcado como "Archivado").
+- Cada persona ve solo lo que su rol permite (por ejemplo, Comisión no ve miembros ni notas). No requiere SQL.
+
 ## Informes
 - Informe de Secretaría para reuniones y asambleas, con el logo. Se elige el **período** (mensual, trimestral, anual o entre fechas) y los **apartados**: actas, reuniones, decisiones y seguimiento, notas y certificados, miembros, inventario, documentos y eventos especiales.
 - Se arma una **vista previa** en pantalla con cifras y detalle; después se descarga el **PDF** o se guarda una copia en el Drive (carpeta "Secretaría - Informes").
@@ -172,7 +178,7 @@ js/imagen.js                    achica las fotos antes de guardarlas
 
 ## Hoja de ruta
 - **Etapa 2:** Calendario ✔, Notas ✔, Inventario ✔ y Documentos ✔.
-- **Etapa 3:** Informes ✔. Sigue: Búsqueda global.
+- **Etapa 3:** Informes ✔, Búsqueda global ✔. Pendiente a futuro: Finanzas / Tesorería.
 - **Después:** Finanzas, ministerios, notificaciones, etc.
 
 ## Seguridad: qué es público y qué no

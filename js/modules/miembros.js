@@ -207,4 +207,5 @@ export async function render(cont, { query }) {
   document.getElementById('b-exp').onclick = exportar;
   document.getElementById('b-nuevo')?.addEventListener('click', nuevo);
   if (query?.nuevo && escribe) nuevo();
+  if (query?.ver) { const m = filas.find((x) => x.id === query.ver); if (m) abrirFicha(m); }
 }

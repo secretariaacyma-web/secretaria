@@ -329,3 +329,20 @@ table.tabla td.acc { text-align: right; white-space: nowrap; }
 .foto-prev { width: 120px; height: 120px; border: 1px dashed var(--borde); border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--texto-2); font-size: 13px; text-align: center; }
 .foto-prev img { width: 100%; height: 100%; object-fit: cover; }
 .foto-ctl { flex: 1; min-width: 200px; display: grid; gap: 8px; }
+
+/* Búsqueda global */
+.buscador-lateral { padding: 10px 10px 0; }
+.buscador-lateral input { width: 100%; box-sizing: border-box; border: 0; border-radius: 8px; padding: 9px 10px; font-size: 14px; background: rgba(255, 255, 255, .16); color: #fff; }
+.buscador-lateral input::placeholder { color: rgba(255, 255, 255, .75); }
+.buscador-lateral input:focus { outline: 2px solid #fff; background: rgba(255, 255, 255, .24); }
+.busq-grande { width: 100%; box-sizing: border-box; font-size: 17px; padding: 12px 14px; }
+.busq-grupo { margin-bottom: 14px; }
+.busq-grupo .enc h2 { font-size: 16px; margin: 0; }
+.busq-item, .busq-mas { display: block; padding: 10px 16px; border-top: 1px solid var(--borde, #e5e7eb); color: inherit; text-decoration: none; }
+.busq-item:first-child { border-top: 0; }
+.busq-item:hover, .busq-mas:hover { background: #f3f6fb; }
+.busq-item .t { font-weight: 600; }
+.busq-item .s { font-size: 13px; color: #667085; }
+.busq-item .f { font-size: 13px; margin-top: 3px; color: #344054; overflow-wrap: anywhere; }
+.busq-mas { font-size: 13px; color: var(--azul, #1d4e89); }
+mark { background: #fde68a; color: inherit; border-radius: 2px; padding: 0 1px; }

@@ -21,6 +21,7 @@ const MODULOS = {
   inventario: () => import('./modules/inventario.js'),
   documentos: () => import('./modules/documentos.js'),
   informes: () => import('./modules/informes.js'),
+  buscar: () => import('./modules/buscar.js'),
 };
 
 function parsearHash() {
@@ -81,6 +82,7 @@ function dibujarApp() {
     <div class="app">
       <aside class="lateral" id="lateral">
         <div class="marca"><b>⛪ ${esc(CONFIG.NOMBRE_APP)}</b><span>${esc(estado.iglesia?.nombre || '')}</span></div>
+        <form class="buscador-lateral" id="buscador" role="search"><input type="search" placeholder="🔍 Buscar en todo…" aria-label="Buscar" autocomplete="off"></form>
         <nav>${items.map((m) => `
           <a href="#/${m.ruta}" data-ruta="${m.ruta}"><span class="ico">${m.ico}</span>${esc(m.texto)}${m.pronto ? '<span class="pronto">pronto</span>' : ''}</a>`).join('')}
         </nav>
@@ -99,6 +101,12 @@ function dibujarApp() {
   document.getElementById('btn-menu').onclick = abrirMenuMovil;
   document.getElementById('velo').onclick = cerrarMenuMovil;
   document.getElementById('btn-salir').onclick = salir;
+  document.getElementById('buscador').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const t = ev.target.querySelector('input').value.trim();
+    cerrarMenuMovil();
+    if (t) location.hash = `#/buscar?q=${encodeURIComponent(t)}`;
+  });
   // Al tocar una sección del menú (incluso la actual) se cierra el menú en el celular.
   document.querySelectorAll('.lateral nav a').forEach((a) => a.addEventListener('click', cerrarMenuMovil));
   navegar();
