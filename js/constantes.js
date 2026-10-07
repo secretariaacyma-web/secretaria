@@ -67,6 +67,19 @@ export const ESTADOS_DECISION = {
   cancelada: ['Cancelada', ''],
 };
 
+// Categorías del calendario: [etiqueta, color].
+export const CATEGORIAS_EVENTO = {
+  culto: ['Culto', '#1f3a5f'],
+  comision: ['Reunión de comisión', '#b7892f'],
+  pastoral: ['Agenda pastoral', '#7b3f98'],
+  estudio: ['Estudio bíblico', '#2d7a4f'],
+  joven: ['Jóvenes', '#c46a1a'],
+  oracion: ['Oración', '#0e7c86'],
+  especial: ['Evento especial', '#b3382c'],
+  otro: ['Otro', '#5b6878'],
+};
+export const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
 // Menú lateral. "roles" limita quién lo ve; "pronto" marca módulos de etapas siguientes.
 export const MENU = [
   { ruta: 'inicio', texto: 'Inicio', ico: '🏠' },
@@ -76,7 +89,7 @@ export const MENU = [
   { ruta: 'reuniones', texto: 'Reuniones', ico: '🗓️' },
   { ruta: 'decisiones', texto: 'Decisiones', ico: '✅' },
   { ruta: 'notas', texto: 'Notas', ico: '✉️', pronto: true },
-  { ruta: 'calendario', texto: 'Calendario', ico: '📅', pronto: true },
+  { ruta: 'calendario', texto: 'Calendario', ico: '📅' },
   { ruta: 'inventario', texto: 'Inventario', ico: '📦', pronto: true },
   { ruta: 'documentos', texto: 'Documentos', ico: '🗂️', pronto: true },
   { ruta: 'informes', texto: 'Informes', ico: '📊', pronto: true },

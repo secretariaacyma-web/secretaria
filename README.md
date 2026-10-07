@@ -1,7 +1,7 @@
 # Secretaría de la iglesia — Etapa 1 (MVP)
 
-Plataforma web para la Secretaría: **Inicio, Actas, Miembros, Autoridades, Reuniones, Decisiones y Configuración** (usuarios, copia de seguridad, actividad).
-Notas, Calendario, Documentos, Inventario e Informes aparecen en el menú como "pronto" (Etapas 2 y 3).
+Plataforma web para la Secretaría: **Inicio, Actas, Miembros, Autoridades, Reuniones, Decisiones, Calendario y Configuración** (usuarios, copia de seguridad, actividad).
+Notas, Documentos, Inventario e Informes aparecen en el menú como "pronto" (Etapas 2 y 3).
 
 - **Base de datos:** Supabase (PostgreSQL) — ya creada: `secretaria-acma`.
 - **Aplicación:** archivos HTML/CSS/JS sin instalación, para publicar en GitHub Pages.
@@ -14,7 +14,7 @@ Notas, Calendario, Documentos, Inventario e Informes aparecen en el menú como "
 1. En Supabase, abrí el proyecto → **SQL Editor** → **New query**.
 2. Abrí el archivo `supabase/schema.sql`, copiá **todo** el contenido, pegalo y tocá **Run**.
 3. Debe terminar con "Success". Se puede volver a ejecutar sin romper nada.
-4. Después, en una consulta nueva, ejecutá también `supabase/02-archivos-drive.sql` (registra las copias PDF guardadas en Drive).
+4. Después, en consultas nuevas (una por archivo), ejecutá también `supabase/02-archivos-drive.sql` (copias PDF en Drive) y `supabase/03-calendario.sql` (calendario y actividades fijas).
 
 ### 2. Cerrar el registro público
 **Authentication → Sign In / Providers** (o *Providers → Email*) → desactivá **Allow new users to sign up**.
@@ -66,6 +66,14 @@ La primera vez que toques **Guardar en Drive**, Google abre una ventana para aut
 
 ---
 
+## Calendario
+- **Vista mensual** (en el celular, cada día muestra puntos de color; tocá el día para ver el detalle) y **lista de los próximos 60 días**. Filtro por categoría.
+- **Las reuniones** cargadas en *Reuniones* aparecen solas.
+- **Actividades fijas semanales** (botón *Actividades fijas*): vienen cargados Culto general (domingo 10:30), Reunión general (miércoles 19:00), Reunión de oración (jueves 18:30), Estudio bíblico (jueves 19:00) y Reunión de jóvenes (sábado 19:00). Se pueden editar, pausar o agregar.
+- **Fechas especiales:** tocá una actividad en un día puntual → *Marcar como Santa Cena* (domingo 10:00 en lugar del culto general), *Cambiar solo esta fecha* o *Cancelar esta fecha*. Las demás semanas no cambian, y *Volver al horario normal* deshace el cambio.
+- **Agenda pastoral / privados:** al crear un evento podés tildar *Privado*; solo lo ven administrador, secretario y pastor.
+- En **Inicio** aparece la agenda de los próximos 7 días.
+
 ## Cómo se manejan los usuarios
 1. Creá el usuario en **Supabase → Authentication → Users → Add user** (con *Auto Confirm User*).
 2. Entrá a **Configuración → Usuarios y permisos** de la aplicación. Ahí aparece como *Pendiente*: asignale el **rol** y tildá **Acceso**.
@@ -115,12 +123,13 @@ js/
   modules/          un archivo por módulo (actas, miembros, ...)
 supabase/schema.sql tablas, relaciones, permisos, auditoría
 supabase/02-archivos-drive.sql  registro de copias PDF en Drive
+supabase/03-calendario.sql      eventos y actividades fijas del calendario
 ```
 
 **Modelo de datos (resumen):** `personas` es la tabla central. De ella cuelgan `miembros`, `autoridades`, los participantes de `reuniones`, los asistentes y firmantes de `actas` y los responsables de `decisiones`. Todo lleva `iglesia_id`, así que más adelante se pueden sumar Finanzas, Ministerios, Asistencia, etc. como tablas nuevas que apuntan a `personas`, sin tocar lo ya cargado.
 
 ## Hoja de ruta
-- **Etapa 2:** Notas (con plantillas y PDF), Calendario, Documentos (enlaces a archivos del Drive).
+- **Etapa 2:** Calendario ✔. Siguen: Notas (con plantillas y PDF) y Documentos (archivos en el Drive).
 - **Etapa 3:** Inventario, Informes (mensual en PDF), Búsqueda global.
 - **Después:** Finanzas, ministerios, notificaciones, etc.
 

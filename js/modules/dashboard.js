@@ -1,7 +1,8 @@
 import { sb, q } from '../supabase.js';
 import { estado, puede, puedeEscribir, mapaPersonas, nombreCompleto } from '../state.js';
 import { TIPOS_REUNION, TIPOS_ACTA, ESTADOS_ACTA, ESTADOS_DECISION, TIPOS_AUTORIDAD } from '../constantes.js';
-import { esc, fmtFecha, fmtHora, badge, encabezado, hoy } from '../ui.js';
+import { esc, fmtFecha, fmtHora, badge, encabezado, hoy, fmtFechaLarga } from '../ui.js';
+import { CATEGORIAS_EVENTO } from '../constantes.js';
 
 export async function render(cont) {
   const h = hoy();
@@ -22,6 +23,13 @@ export async function render(cont) {
       ? sb.from('miembros').select('id', { count: 'exact', head: true }).eq('estado', 'activo').eq('archivado', false).then((r) => r.count)
       : null,
   ]);
+
+  // Agenda de los próximos 7 días (si el calendario todavía no está instalado, se omite).
+  let agenda = null;
+  try {
+    const { eventosEntre, sumarDias } = await import('./calendario.js');
+    agenda = (await eventosEntre(h, sumarDias(h, 6))).filter((e) => !e.cancelado);
+  } catch { /* calendario no instalado */ }
 
   const conActa = new Set(actasConReunion.map((a) => a.reunion_id));
   const sinActa = realizadas.filter((r) => !conActa.has(r.id));
@@ -45,6 +53,7 @@ export async function render(cont) {
       <a href="#/miembros?nuevo=1">＋ Nuevo miembro</a>
       <a href="#/reuniones?nuevo=1">＋ Nueva reunión</a>
       <a href="#/decisiones?nuevo=1">＋ Nueva decisión</a>
+      ${agenda ? '<a href="#/calendario?nuevo=1">＋ Nuevo evento</a>' : ''}
     </div>` : ''}
 
     <div class="grilla c4">
@@ -60,6 +69,15 @@ export async function render(cont) {
         ? `<ul class="lista">${tareas.map((t) => `<li><a class="fila" href="${t.href}"><span class="badge ${t.tipo}">${t.n}</span> &nbsp;${esc(t.txt)}</a></li>`).join('')}</ul>`
         : '<div class="vacio">✔ Todo al día. No hay tareas pendientes.</div>'}
     </div>
+
+    ${agenda ? `<div class="tarjeta mt">
+      <div class="enc"><h2>Agenda de los próximos 7 días</h2><a href="#/calendario">Ver calendario</a></div>
+      ${agenda.length ? `<ul class="lista">${agenda.slice(0, 10).map((e) => `
+        <li><a class="fila" href="#/calendario"><div class="t">${esc(e.titulo)} ${e.privado ? '🔒' : ''}</div>
+        <div class="s" style="text-transform:capitalize">${esc(fmtFechaLarga(e.fecha).split(' de ').slice(0, 2).join(' de '))}${e.hora ? ' · ' + esc(e.hora) + ' hs' : ''}${e.lugar ? ' · ' + esc(e.lugar) : ''}</div></a>
+        <span class="badge" style="background:${(CATEGORIAS_EVENTO[e.categoria] || CATEGORIAS_EVENTO.otro)[1]}1f;color:${(CATEGORIAS_EVENTO[e.categoria] || CATEGORIAS_EVENTO.otro)[1]}">${esc((CATEGORIAS_EVENTO[e.categoria] || CATEGORIAS_EVENTO.otro)[0])}</span></li>`).join('')}</ul>`
+        : listaVacia('No hay actividades en los próximos 7 días.')}
+    </div>` : ''}
 
     <div class="grilla c2 mt">
       <div class="tarjeta">

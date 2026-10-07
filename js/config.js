@@ -18,7 +18,7 @@ export const CONFIG = {
   // ---- Copias en Google Drive (ver README, sección "Guardar en Drive") ----
   // Pegá acá el "ID de cliente" de Google Cloud. Si queda vacío, el botón
   // "Guardar en Drive" no aparece (el PDF se puede descargar igual).
-     GOOGLE_CLIENT_ID: '258846401489-0s3joef8kcmlnabeqdbdc61t8vvbs40r.apps.googleusercontent.com',
+  GOOGLE_CLIENT_ID: '258846401489-0s3joef8kcmlnabeqdbdc61t8vvbs40r.apps.googleusercontent.com',
   // Cuenta de Google de la iglesia (solo para sugerirla en la ventana de acceso).
   GOOGLE_CUENTA: 'secretariaacyma@gmail.com',
   // Nombre de la carpeta que la aplicación crea en el Drive.

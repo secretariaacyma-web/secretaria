@@ -5,9 +5,9 @@ import { esc, fmtFechaHora, encabezado, formModal, toast, errorAmigable, descarg
 
 const TABLAS_RESPALDO = [
   'iglesias', 'perfiles', 'personas', 'miembros', 'autoridades', 'reuniones', 'reunion_participantes',
-  'actas', 'acta_asistentes', 'acta_firmas', 'decisiones', 'archivos_drive', 'audit_log',
+  'actas', 'acta_asistentes', 'acta_firmas', 'decisiones', 'archivos_drive', 'actividades_fijas', 'eventos', 'audit_log',
 ];
-const OPCIONALES = ['archivos_drive']; // tablas de migraciones: si todavía no existen, se omiten
+const OPCIONALES = ['archivos_drive', 'actividades_fijas', 'eventos']; // tablas de migraciones: si todavía no existen, se omiten
 const CLAVE_RESPALDO = 'secretaria_ultimo_respaldo';
 
 async function leerTodo(tabla) {
@@ -139,7 +139,7 @@ export async function render(cont) {
       const ids = [...new Set(data.map((a) => a.usuario_id).filter(Boolean))];
       const perf = ids.length ? await q(sb.from('perfiles').select('id,nombre,email').in('id', ids)) : [];
       const nom = Object.fromEntries(perf.map((p) => [p.id, p.nombre || p.email]));
-      const tablaNom = { personas: 'Persona', miembros: 'Miembro', autoridades: 'Autoridad', reuniones: 'Reunión', actas: 'Acta', decisiones: 'Decisión' };
+      const tablaNom = { personas: 'Persona', miembros: 'Miembro', autoridades: 'Autoridad', reuniones: 'Reunión', actas: 'Acta', decisiones: 'Decisión', eventos: 'Evento', actividades_fijas: 'Actividad fija' };
       const accion = { INSERT: 'Alta', UPDATE: 'Modificación', DELETE: 'Baja' };
       box.innerHTML = tablaHTML(
         [
