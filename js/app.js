@@ -22,6 +22,7 @@ const MODULOS = {
   documentos: () => import('./modules/documentos.js'),
   informes: () => import('./modules/informes.js'),
   buscar: () => import('./modules/buscar.js'),
+  tesoreria: () => import('./modules/tesoreria.js'),
 };
 
 function parsearHash() {
@@ -36,6 +37,7 @@ async function navegar() {
   const cont = document.getElementById('contenido');
   if (!cont || !estado.perfil) return;
   const { ruta, id, query } = parsearHash();
+  if (ruta === 'inicio' && rolActual() === 'tesorero') { location.replace('#/tesoreria'); return; }
   const item = MENU.find((m) => m.ruta === ruta);
   const cargador = MODULOS[ruta];
   const miToken = ++tokenNavegacion;
@@ -82,7 +84,7 @@ function dibujarApp() {
     <div class="app">
       <aside class="lateral" id="lateral">
         <div class="marca"><b>⛪ ${esc(CONFIG.NOMBRE_APP)}</b><span>${esc(estado.iglesia?.nombre || '')}</span></div>
-        <form class="buscador-lateral" id="buscador" role="search"><input type="search" placeholder="🔍 Buscar en todo…" aria-label="Buscar" autocomplete="off"></form>
+${rol === 'tesorero' ? '' : '<form class="buscador-lateral" id="buscador" role="search"><input type="search" placeholder="🔍 Buscar en todo…" aria-label="Buscar" autocomplete="off"></form>'}
         <nav>${items.map((m) => `
           <a href="#/${m.ruta}" data-ruta="${m.ruta}"><span class="ico">${m.ico}</span>${esc(m.texto)}${m.pronto ? '<span class="pronto">pronto</span>' : ''}</a>`).join('')}
         </nav>
@@ -101,7 +103,7 @@ function dibujarApp() {
   document.getElementById('btn-menu').onclick = abrirMenuMovil;
   document.getElementById('velo').onclick = cerrarMenuMovil;
   document.getElementById('btn-salir').onclick = salir;
-  document.getElementById('buscador').addEventListener('submit', (ev) => {
+  document.getElementById('buscador')?.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const t = ev.target.querySelector('input').value.trim();
     cerrarMenuMovil();

@@ -6,6 +6,7 @@ export const ROLES = {
   pastor: 'Pastor',
   comision: 'Comisión',
   consulta: 'Consulta',
+  tesorero: 'Tesorero/a',
 };
 
 export const ESTADOS_MIEMBRO = {
@@ -118,16 +119,17 @@ export const CATEGORIAS_DOC = {
 
 // Menú lateral. "roles" limita quién lo ve; "pronto" marca módulos de etapas siguientes.
 export const MENU = [
-  { ruta: 'inicio', texto: 'Inicio', ico: '🏠' },
-  { ruta: 'actas', texto: 'Actas', ico: '📜' },
+  { ruta: 'inicio', texto: 'Inicio', ico: '🏠', roles: ['administrador', 'secretario', 'pastor', 'comision', 'consulta'] },
+  { ruta: 'actas', texto: 'Actas', ico: '📜', roles: ['administrador', 'secretario', 'pastor', 'comision', 'consulta'] },
   { ruta: 'miembros', texto: 'Miembros', ico: '👥', roles: ['administrador', 'secretario', 'pastor'] },
-  { ruta: 'autoridades', texto: 'Autoridades', ico: '🏛️' },
-  { ruta: 'reuniones', texto: 'Reuniones', ico: '🗓️' },
-  { ruta: 'decisiones', texto: 'Decisiones', ico: '✅' },
+  { ruta: 'autoridades', texto: 'Autoridades', ico: '🏛️', roles: ['administrador', 'secretario', 'pastor', 'comision', 'consulta'] },
+  { ruta: 'reuniones', texto: 'Reuniones', ico: '🗓️', roles: ['administrador', 'secretario', 'pastor', 'comision', 'consulta'] },
+  { ruta: 'decisiones', texto: 'Decisiones', ico: '✅', roles: ['administrador', 'secretario', 'pastor', 'comision', 'consulta'] },
   { ruta: 'notas', texto: 'Notas', ico: '✉️', roles: ['administrador', 'secretario', 'pastor'] },
-  { ruta: 'calendario', texto: 'Calendario', ico: '📅' },
+  { ruta: 'calendario', texto: 'Calendario', ico: '📅', roles: ['administrador', 'secretario', 'pastor', 'comision', 'consulta'] },
   { ruta: 'inventario', texto: 'Inventario', ico: '📦', roles: ['administrador', 'secretario', 'pastor', 'comision'] },
   { ruta: 'documentos', texto: 'Documentos', ico: '🗂️', roles: ['administrador', 'secretario', 'pastor', 'comision'] },
   { ruta: 'informes', texto: 'Informes', ico: '📊', roles: ['administrador', 'secretario', 'pastor'] },
+  { ruta: 'tesoreria', texto: 'Tesorería', ico: '💰', roles: ['administrador', 'tesorero'] },
   { ruta: 'configuracion', texto: 'Configuración', ico: '⚙️' },
 ];

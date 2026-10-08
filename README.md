@@ -103,6 +103,15 @@ La primera vez que toques **Guardar en Drive**, Google abre una ventana para aut
 - El archivo subido no se reemplaza: si hay que cambiarlo se archiva el documento y se sube uno nuevo. Nada se borra; *Archivar* se deshace con *Restaurar*.
 - Lo ven administrador, secretario, pastor y comisión; lo modifican administrador y secretario.
 
+## Tesorería
+- Menú **Tesorería** (solo administrador y **tesorero/a**). Para dar acceso a la tesorera: que se registre en la pantalla de ingreso y, en **Configuración → Usuarios**, ponerle el rol **Tesorero/a** y tildar "Activo". Ese rol ve únicamente Tesorería.
+- **Movimientos:** se cargan ingresos (Culto General u Otros) y egresos por rubro (los 10 de la planilla ACMA). De cada ingreso de Culto General se calculan solos el aporte al **pastor** (egreso del rubro 8), al **distrito** y a la **central**. Un ingreso se puede marcar "sin aporte al pastor". Nada se borra: se **anula** con un motivo y se puede restaurar.
+- **Saldo en caja:** saldo anterior + ingresos − (egresos + aportes). Es el saldo "ya pagado todo".
+- **Planilla ACMA:** réplica de la planilla oficial, completada sola con los movimientos del mes, con botón **Descargar PDF**. En "Datos del mes" se cargan solo F (ministerios nacionales), retenciones I–III y el envío de valores. Nombres de tesorero/a, pastor y revisor/a salen de **Autoridades** (o de Configuración). La línea de revisor/a se agrega a la derecha de la de contacto (la planilla oficial no la trae).
+- **Configuración:** datos de la planilla y **porcentajes** (40 / 2 / 10 al inicio). Cada cambio vale desde el mes elegido y no altera los meses anteriores.
+- **Importar:** el administrador puede importar el archivo exportado del sistema anterior (Firebase). No repite lo ya importado.
+- Migración: `supabase/08-tesoreria.sql`.
+
 ## Búsqueda global
 - La caja **Buscar en todo…** está arriba del menú lateral (también en el celular). Escribís y apretás Enter.
 - Busca en actas, reuniones, decisiones, notas, miembros, autoridades, calendario, inventario y documentos, **sin importar mayúsculas ni tildes**, y deben aparecer **todas** las palabras escritas.
@@ -178,7 +187,7 @@ js/imagen.js                    achica las fotos antes de guardarlas
 
 ## Hoja de ruta
 - **Etapa 2:** Calendario ✔, Notas ✔, Inventario ✔ y Documentos ✔.
-- **Etapa 3:** Informes ✔, Búsqueda global ✔. Pendiente a futuro: Finanzas / Tesorería.
+- **Etapa 3:** Informes ✔, Búsqueda global ✔. Tesorería ✔ (libro de caja y planilla ACMA).
 - **Después:** Finanzas, ministerios, notificaciones, etc.
 
 ## Seguridad: qué es público y qué no

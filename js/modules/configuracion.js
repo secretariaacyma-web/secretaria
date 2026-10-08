@@ -5,9 +5,9 @@ import { esc, fmtFechaHora, encabezado, formModal, toast, errorAmigable, descarg
 
 const TABLAS_RESPALDO = [
   'iglesias', 'perfiles', 'personas', 'miembros', 'autoridades', 'reuniones', 'reunion_participantes',
-  'actas', 'acta_asistentes', 'acta_firmas', 'decisiones', 'archivos_drive', 'actividades_fijas', 'eventos', 'notas', 'inventario_bienes', 'inventario_prestamos', 'inventario_movimientos', 'documentos', 'audit_log',
+  'actas', 'acta_asistentes', 'acta_firmas', 'decisiones', 'archivos_drive', 'actividades_fijas', 'eventos', 'notas', 'inventario_bienes', 'inventario_prestamos', 'inventario_movimientos', 'documentos', 'tesoreria_config', 'tesoreria_porcentajes', 'tesoreria_movimientos', 'tesoreria_planillas', 'audit_log',
 ];
-const OPCIONALES = ['archivos_drive', 'actividades_fijas', 'eventos', 'notas', 'inventario_bienes', 'inventario_prestamos', 'inventario_movimientos', 'documentos']; // tablas de migraciones: si todavía no existen, se omiten
+const OPCIONALES = ['archivos_drive', 'actividades_fijas', 'eventos', 'notas', 'inventario_bienes', 'inventario_prestamos', 'inventario_movimientos', 'documentos', 'tesoreria_config', 'tesoreria_porcentajes', 'tesoreria_movimientos', 'tesoreria_planillas']; // tablas de migraciones: si todavía no existen, se omiten
 const CLAVE_RESPALDO = 'secretaria_ultimo_respaldo';
 
 async function leerTodo(tabla) {
@@ -36,7 +36,7 @@ export async function render(cont) {
       <div class="cuerpo">
         <p style="margin:0 0 4px"><b>${esc(estado.perfil.nombre || '')}</b></p>
         <p style="margin:0 0 12px;color:var(--texto-2)">${esc(estado.perfil.email || estado.user?.email || '')} · ${esc(ROLES[estado.perfil.rol])}</p>
-        <button class="btn sec" id="b-pass">Cambiar contraseña</button>
+        ${esAdmin ? '<button class="btn sec" id="b-nombre">Cambiar mi nombre</button> ' : ''}<button class="btn sec" id="b-pass">Cambiar contraseña</button>
       </div>
     </div>
 
@@ -82,6 +82,20 @@ export async function render(cont) {
   });
 
   if (esAdmin) {
+    document.getElementById('b-nombre').onclick = async () => {
+      const ok = await formModal({
+        titulo: 'Mi nombre', campos: [{ name: 'nombre', label: 'Nombre que se muestra en el sistema', required: true, full: true, placeholder: 'Ej.: Diego Jerez' }],
+        valores: { nombre: estado.perfil.nombre || '' },
+        guardar: async (v) => {
+          const nombre = v.nombre.trim();
+          if (!nombre) throw new Error('Escribí un nombre.');
+          await q(sb.from('perfiles').update({ nombre }).eq('id', estado.perfil.id));
+          estado.perfil.nombre = nombre;
+          const b = document.querySelector('.lateral .usuario b'); if (b) b.textContent = nombre;
+        },
+      });
+      if (ok) { toast('Nombre actualizado.', 'ok'); await render(cont); }
+    };
     document.getElementById('b-iglesia').onclick = async () => {
       const ok = await formModal({
         titulo: 'Nombre de la iglesia', campos: [{ name: 'nombre', label: 'Nombre', required: true, full: true }],
