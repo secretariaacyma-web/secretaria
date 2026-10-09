@@ -192,3 +192,8 @@ js/imagen.js                    achica las fotos antes de guardarlas
 
 ## Seguridad: qué es público y qué no
 `js/config.js` contiene la **URL** y la clave **publishable** de Supabase. Son públicas por diseño y es normal que estén en el código. **Nunca** pegues ahí la clave `secret` o `service_role`.
+
+
+## Versión de demostración
+
+`demo.html` abre la plataforma con **datos inventados**, sin usuario ni contraseña y **solo para mirar** (no toca la base real; no incluye Tesorería ni Configuración). Los datos de ejemplo están en `js/demo/datos.js`; el cliente simulado, en `js/demo/stub.js`. El link es `https://TU-USUARIO.github.io/secretaria/demo.html`.

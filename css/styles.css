@@ -346,3 +346,8 @@ table.tabla td.acc { text-align: right; white-space: nowrap; }
 .busq-item .f { font-size: 13px; margin-top: 3px; color: #344054; overflow-wrap: anywhere; }
 .busq-mas { font-size: 13px; color: var(--azul, #1d4e89); }
 mark { background: #fde68a; color: inherit; border-radius: 2px; padding: 0 1px; }
+
+.banner-demo{position:fixed;top:0;left:0;right:0;z-index:9999;height:24px;background:#b7892f;color:#fff;text-align:center;font:600 12px/24px system-ui,sans-serif;white-space:nowrap;overflow:hidden;letter-spacing:.3px}
+body:has(.banner-demo) .lateral{top:24px}
+body:has(.banner-demo) .principal{padding-top:24px}
+body:has(.banner-demo) .barra-movil{top:24px}

@@ -1,5 +1,5 @@
 // Punto de entrada: sesión, menú lateral y enrutador por hash (#/actas, #/actas/ID).
-import { sb, q } from './supabase.js';
+import { sb, q, DEMO } from './supabase.js';
 import { CONFIG } from './config.js';
 import { estado, rolActual } from './state.js';
 import { MENU, ROLES } from './constantes.js';
@@ -79,7 +79,7 @@ function cerrarMenuMovil() {
 
 function dibujarApp() {
   const rol = rolActual();
-  const items = MENU.filter((m) => !m.roles || m.roles.includes(rol));
+  const items = MENU.filter((m) => (!m.roles || m.roles.includes(rol)) && !(DEMO && m.ruta === 'configuracion'));
   raiz.innerHTML = `
     <div class="app">
       <aside class="lateral" id="lateral">
@@ -91,7 +91,7 @@ ${rol === 'tesorero' ? '' : '<form class="buscador-lateral" id="buscador" role="
         <div class="usuario">
           <b>${esc(estado.perfil.nombre || estado.perfil.email || 'Usuario')}</b>
           <span>${esc(ROLES[rol] || rol)}</span><br>
-          <button id="btn-salir">Cerrar sesión</button>
+          ${DEMO ? '' : '<button id="btn-salir">Cerrar sesión</button>'}
         </div>
       </aside>
       <div class="velo" id="velo"></div>
@@ -102,7 +102,8 @@ ${rol === 'tesorero' ? '' : '<form class="buscador-lateral" id="buscador" role="
     </div>`;
   document.getElementById('btn-menu').onclick = abrirMenuMovil;
   document.getElementById('velo').onclick = cerrarMenuMovil;
-  document.getElementById('btn-salir').onclick = salir;
+  if (!DEMO) document.getElementById('btn-salir').onclick = salir;
+  if (DEMO) document.body.insertAdjacentHTML('afterbegin', '<div class="banner-demo">DEMOSTRACIÓN · datos inventados · solo para mirar</div>');
   document.getElementById('buscador')?.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const t = ev.target.querySelector('input').value.trim();
