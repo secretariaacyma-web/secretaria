@@ -1,5 +1,6 @@
 import { sb, q } from '../supabase.js';
 import { puedeEscribir } from '../state.js';
+import { generarPDFListado } from '../pdf-listado.js';
 import { invalidarPersonas } from '../state.js';
 import { ESTADOS_MIEMBRO } from '../constantes.js';
 import {
@@ -183,11 +184,81 @@ export async function render(cont, { query }) {
     );
   }
 
+  // ---- PDF: cantidades y nombres (no incluye archivados) ----
+  const bajarPDF = (blob, nombre) => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
+  const edadDe = (iso) => {
+    if (!iso) return null;
+    const n = new Date(`${String(iso).slice(0, 10)}T12:00:00`); const h = new Date();
+    let e = h.getFullYear() - n.getFullYear();
+    if (h.getMonth() < n.getMonth() || (h.getMonth() === n.getMonth() && h.getDate() < n.getDate())) e -= 1;
+    return e;
+  };
+  const cabeceraPDF = () => ({ iglesia: 'Villa Jardín', fecha: fmtFecha(hoy()) });
+
+  function pdfCantidad() {
+    try {
+      const vivos = filas.filter((m) => !m.archivado);
+      const total = vivos.length || 1;
+      const pct = (n) => `${(Math.round((n / total) * 1000) / 10).toLocaleString('es-AR')} %`;
+      const porEstado = Object.entries(ESTADOS_MIEMBRO).map(([k, [l]]) => [l, vivos.filter((m) => m.estado === k).length]);
+      const activos = vivos.filter((m) => m.estado === 'activo');
+      const tramos = [['Niños (0 a 12 años)', 0, 12], ['Adolescentes (13 a 17 años)', 13, 17], ['Jóvenes (18 a 29 años)', 18, 29], ['Adultos (30 a 59 años)', 30, 59], ['Mayores (60 años o más)', 60, 200]];
+      const edades = tramos.map(([l, a, b]) => [l, activos.filter((m) => { const e = edadDe(m.persona.fecha_nacimiento); return e !== null && e >= a && e <= b; }).length]);
+      const sinEdad = activos.filter((m) => edadDe(m.persona.fecha_nacimiento) === null).length;
+      const porAnio = {};
+      for (const m of vivos) { const a = m.fecha_ingreso ? String(m.fecha_ingreso).slice(0, 4) : 'Sin dato'; porAnio[a] = (porAnio[a] || 0) + 1; }
+      const anios = Object.entries(porAnio).sort(([a], [b]) => (a === 'Sin dato') - (b === 'Sin dato') || b.localeCompare(a));
+      const nAct = activos.length || 1;
+      const blob = generarPDFListado({
+        iglesia: cabeceraPDF().iglesia, titulo: 'Registro de miembros – Cantidades', subtitulo: `Al ${cabeceraPDF().fecha} · no incluye registros archivados`,
+        secciones: [
+          { titulo: 'Miembros por estado', columnas: [{ h: 'Estado', w: 0 }, { h: 'Cantidad', w: 90, align: 'r' }, { h: '% del total', w: 90, align: 'r' }],
+            filas: porEstado.map(([l, n]) => [l, String(n), pct(n)]), total: ['TOTAL DE REGISTROS', String(vivos.length), '100 %'] },
+          { titulo: 'Miembros activos por edad', columnas: [{ h: 'Franja', w: 0 }, { h: 'Cantidad', w: 90, align: 'r' }, { h: '% de activos', w: 90, align: 'r' }],
+            filas: [...edades, ...(sinEdad ? [['Sin fecha de nacimiento cargada', sinEdad]] : [])].map(([l, n]) => [l, String(n), `${(Math.round((n / nAct) * 1000) / 10).toLocaleString('es-AR')} %`]),
+            total: ['TOTAL DE ACTIVOS', String(activos.length), '100 %'] },
+          { titulo: 'Ingresos por año (todos los registros)', columnas: [{ h: 'Año de ingreso', w: 0 }, { h: 'Cantidad', w: 90, align: 'r' }],
+            filas: anios.map(([a, n]) => [a, String(n)]), total: ['TOTAL', String(vivos.length)] },
+        ],
+      });
+      bajarPDF(blob, `Miembros - cantidades - ${hoy()}.pdf`); toast('PDF de cantidades descargado.', 'ok');
+    } catch (e) { toast(errorAmigable(e), 'error'); }
+  }
+
+  async function pdfNombres() {
+    const ok = await formModal({
+      titulo: 'PDF con la lista de nombres', textoGuardar: 'Descargar PDF',
+      valores: { estado: 'activo', datos: 'nombres' },
+      campos: [
+        { name: 'estado', label: 'Qué miembros incluir', type: 'select', required: true, full: true,
+          options: [{ v: 'todos', l: 'Todos (sin archivados)' }, ...Object.entries(ESTADOS_MIEMBRO).map(([v, [l]]) => ({ v, l }))] },
+        { name: 'datos', label: 'Datos a mostrar', type: 'select', required: true, full: true,
+          options: [{ v: 'nombres', l: 'Solo apellido y nombre' }, { v: 'contacto', l: 'Apellido y nombre + DNI y teléfono' }] },
+      ],
+      guardar: async (v) => {
+        const lista = filas.filter((m) => !m.archivado && (v.estado === 'todos' || m.estado === v.estado))
+          .sort((a, b) => `${a.persona.apellido} ${a.persona.nombre}`.localeCompare(`${b.persona.apellido} ${b.persona.nombre}`, 'es'));
+        const etiqueta = v.estado === 'todos' ? 'todos los estados' : ESTADOS_MIEMBRO[v.estado][0].toLowerCase();
+        const conContacto = v.datos === 'contacto';
+        const columnas = [{ h: 'N°', w: 34, align: 'r' }, { h: 'Apellido y nombre', w: 0 }, ...(conContacto ? [{ h: 'DNI', w: 90 }, { h: 'Teléfono', w: 110 }] : [])];
+        const blob = generarPDFListado({
+          iglesia: cabeceraPDF().iglesia, titulo: `Registro de miembros – Nombres (${etiqueta})`, subtitulo: `Al ${cabeceraPDF().fecha} · orden alfabético`,
+          secciones: [{ columnas, filas: lista.map((m, i) => [String(i + 1), `${m.persona.apellido}, ${m.persona.nombre}`, ...(conContacto ? [m.persona.dni || '', m.persona.telefono || ''] : [])]), total: ['', `TOTAL: ${lista.length}`, ...(conContacto ? ['', ''] : [])] }],
+        });
+        bajarPDF(blob, `Miembros - nombres - ${hoy()}.pdf`);
+      },
+    });
+    if (ok) toast('PDF de nombres descargado.', 'ok');
+  }
+
   async function recargar() { await cargar(); pintarTabla(); }
 
   cont.innerHTML = `
     ${encabezado('Miembros', 'Registro de miembros de la iglesia. Información privada.',
-      `<button class="btn sec" id="b-exp">⬇ Exportar listado</button>${escribe ? '<button class="btn" id="b-nuevo">+ Nuevo miembro</button>' : ''}`)}
+      `<button class="btn sec" id="b-exp">⬇ Exportar listado</button><button class="btn sec" id="b-pdfc">📊 PDF cantidades</button><button class="btn sec" id="b-pdfn">📋 PDF nombres</button>${escribe ? '<button class="btn" id="b-nuevo">+ Nuevo miembro</button>' : ''}`)}
     <div class="filtros">
       <input type="search" id="f-txt" placeholder="Buscar por nombre, apellido o DNI…">
       <select id="f-estado"><option value="">Todos los estados</option>
@@ -205,6 +276,8 @@ export async function render(cont, { query }) {
   document.getElementById('f-estado').onchange = pintarTabla;
   document.getElementById('f-arch').onchange = (e) => { verArchivados = e.target.checked; pintarTabla(); };
   document.getElementById('b-exp').onclick = exportar;
+  document.getElementById('b-pdfc').onclick = pdfCantidad;
+  document.getElementById('b-pdfn').onclick = pdfNombres;
   document.getElementById('b-nuevo')?.addEventListener('click', nuevo);
   if (query?.nuevo && escribe) nuevo();
   if (query?.ver) { const m = filas.find((x) => x.id === query.ver); if (m) abrirFicha(m); }
