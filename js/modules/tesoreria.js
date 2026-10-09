@@ -161,7 +161,7 @@ export async function render(cont, { query }) {
   function datosPDF(r) {
     const f = datosFirmas();
     return {
-      iglesia: config?.nombre_planilla || estado.iglesia?.nombre || '', mes: nombreMes(mes), distrito: config?.distrito || 'SUR',
+      iglesia: config?.nombre_planilla || 'Villa Jardín', mes: nombreMes(mes), distrito: config?.distrito || 'SUR',
       valores: { A: r.A, B: r.B, C: r.C, D: r.D, E: r.E, F: r.F, G: r.G, H: r.H, rubros: r.rubrosPlanilla, tcomp: r.tcomp, cant: r.cant, I: r.I, II: r.II, III: r.III, IV: r.IV, V: r.V },
       remito: {
         fecha: r.plan?.rem_fecha, efectivo: r.efectivo, deposito: r.deposito, depositoFecha: r.plan?.rem_deposito_fecha,
@@ -210,8 +210,7 @@ export async function render(cont, { query }) {
   function pintarPlanilla(box) {
     const r = resumen(); const f = datosFirmas();
     const faltan = [];
-    if (!(config?.nombre_planilla || estado.iglesia?.nombre)) faltan.push('nombre de la iglesia');
-    if (!f.tesorero) faltan.push('tesorero/a'); if (!f.pastor) faltan.push('pastor');
+        if (!f.tesorero) faltan.push('tesorero/a'); if (!f.pastor) faltan.push('pastor');
     const fila = (a, b, c = '') => `<tr><td style="padding:5px 10px;color:var(--texto-2)">${a}</td><td style="padding:5px 10px">${b}</td><td style="padding:5px 10px;text-align:right"><b>${c}</b></td></tr>`;
     box.innerHTML = `
       ${faltan.length ? `<div class="aviso warn">Falta completar en la pestaña <b>Configuración</b>: ${esc(faltan.join(', '))}. Sin eso salen en blanco en la planilla.</div>` : ''}
@@ -253,7 +252,7 @@ export async function render(cont, { query }) {
       titulo: 'Datos para la planilla', ancho: true,
       aviso: 'Los nombres se completan solos con las Autoridades vigentes (cargos Tesorero/a, Pastor y Revisor/a de cuentas). Si escribís uno acá, se usa ese.',
       valores: {
-        nombre_planilla: config?.nombre_planilla || estado.iglesia?.nombre || '', distrito: config?.distrito || 'SUR',
+        nombre_planilla: config?.nombre_planilla || 'Villa Jardín', distrito: config?.distrito || 'SUR',
         tesorero_nombre: f.tesorero, tesorero_tel: config?.tesorero_tel || '', tesorero_email: config?.tesorero_email || '',
         pastor_nombre: f.pastor, revisor_nombre: f.revisor,
       },
@@ -326,7 +325,7 @@ export async function render(cont, { query }) {
     box.innerHTML = `
       <div class="tarjeta"><div class="enc"><h2>Datos para la planilla</h2><button class="btn sec" id="c-datos">✏️ Editar</button></div>
         <div class="cuerpo"><div class="form-grid" style="font-size:14px">
-          <div><span style="color:var(--texto-2)">Iglesia de:</span> <b>${esc(config?.nombre_planilla || estado.iglesia?.nombre || '—')}</b></div>
+          <div><span style="color:var(--texto-2)">Iglesia de:</span> <b>${esc(config?.nombre_planilla || 'Villa Jardín')}</b></div>
           <div><span style="color:var(--texto-2)">Distrito:</span> <b>${esc(config?.distrito || 'SUR')}</b></div>
           <div><span style="color:var(--texto-2)">Tesorero/a:</span> <b>${esc(f.tesorero || '—')}</b></div>
           <div><span style="color:var(--texto-2)">Pastor:</span> <b>${esc(f.pastor || '—')}</b></div>

@@ -27,6 +27,7 @@ const n2 = (n) => String(Math.round(n * 100) / 100);
 
 // Ancho en puntos de un texto con la fuente f ('R'|'B'), tamaño y compresión horizontal.
 function ancho(texto, f, size, tz = ESTRECHO) {
+  if (f === 'I') f = 'R';
   let w = 0;
   for (const ch of String(texto ?? '').normalize('NFC')) w += ANCHOS[f][codigo(ch) - 32] ?? 556;
   return (w * size * tz) / 1000;
@@ -51,7 +52,7 @@ export function generarPDFPlanilla(d) {
   const y = (top) => n2(H - top);
   const texto = (t, x, baseTop, { f = 'R', size = 8, tz = ESTRECHO, color = '0 0 0' } = {}) => {
     if (t === '' || t == null) return;
-    ops.push(`BT ${color} rg /${f === 'B' ? 'F2' : 'F1'} ${size} Tf ${Math.round(tz * 100)} Tz 1 0 0 1 ${n2(x)} ${y(baseTop)} Tm (${escapar(codificar(t))}) Tj ET`);
+    ops.push(`BT ${color} rg /${f === 'B' ? 'F2' : f === 'I' ? 'F3' : 'F1'} ${size} Tf ${Math.round(tz * 100)} Tz 1 0 0 1 ${n2(x)} ${y(baseTop)} Tm (${escapar(codificar(t))}) Tj ET`);
   };
 
   // 1) Fondos y bordes de la planilla original.
@@ -61,7 +62,7 @@ export function generarPDFPlanilla(d) {
   ops.push(`q ${n2(P.logo.w)} 0 0 ${n2(P.logo.h)} ${n2(P.logo.x)} ${y(P.logo.top + P.logo.h)} cm /Im1 Do Q`);
 
   // 2) Textos fijos.
-  for (const [x, base, size, bold, col, t] of P.words) texto(t, x, base, { f: bold ? 'B' : 'R', size, color: hex(P.palette[col]) });
+  for (const [x, base, size, bold, col, t] of P.words) if (!(base > 565 && base < 620)) texto(t, x, base, { f: bold ? 'B' : 'R', size, color: hex(P.palette[col]) });
 
   // 3) Importes y datos.
   const celda = (k) => P.celdas[k];
@@ -130,35 +131,36 @@ export function generarPDFPlanilla(d) {
   // Firmas y datos de contacto.
   const f = d.firmas || {};
   const tras = (fijo, x, size) => x + ancho(fijo, 'R', size);
-  texto(f.tesorero, tras('TESORERO', 92.38, 8.68) + 3, 580.2, { size: 8.4 });
-  texto(f.pastor, tras('PASTOR', 322.4, 7.44) + 3, 580.2, { size: 8.4 });
-  texto(f.tesorero, tras('Aclaración:', 92.38, 6.82) + 2, 607.6, { size: 7.4 });
-  texto(f.pastor, tras('Aclaración:', 320.54, 6.82) + 2, 607.6, { size: 7.4 });
+  // Firmas: línea, nombre en negrita y cargo en cursiva (tres columnas).
+  const firma = (x0, x1, nombre, cargo) => {
+    ops.push(`0 0 0 RG 0.6 w ${n2(x0)} ${y(596)} m ${n2(x1)} ${y(596)} l S`);
+    const c = (t, f, size, base) => {
+      if (!t) return;
+      const L = x1 - x0; let tz = 1; const w = ancho(t, f, size, 1);
+      if (w > L) tz = L / w;
+      texto(t, x0 + (L - w * tz) / 2, base, { f, size, tz });
+    };
+    c(nombre, 'B', 8.2, 606.5); c(cargo, 'I', 7.6, 616);
+  };
+  firma(92.38, 209, f.tesorero, 'Tesorero/a');
+  firma(227, 344, f.pastor, 'Pastor');
+  firma(362, 479.25, f.revisor, 'Revisor/a de cuentas');
   texto(f.tesoreroTel, tras('Te:', 92.38, 6.82) + 2, 635.6, { size: 7 });
   texto(f.tesoreroEmail, tras('E-mail:', 166.77, 6.82) + 2, 635.6, { size: 7 });
-  // Revisor/a de cuentas: Firma y Aclaración (la planilla oficial no las trae; van a la derecha, bajo el pastor).
-  const lineaRev = (rotuloTxt, base, nombre) => {
-    texto(rotuloTxt, 320.54, base, { size: 6.82 });
-    const x0 = tras(rotuloTxt, 320.54, 6.82) + 2;
-    ops.push(`0 0 0 RG 0.4 w ${n2(x0)} ${y(base + 1.46)} m 479.25 ${y(base + 1.46)} l S`);
-    if (nombre) texto(nombre, x0 + 1, base - 1.1, { size: 7 });
-  };
-  lineaRev('Firma Revisor/a de cuentas:', 636.74, '');
-  lineaRev('Aclaración:', 648.2, f.revisor);
-
   // Armado del archivo PDF.
   const flujo = ops.join('\n');
   const jpg = atob(LOGO_ACMA);
   const objs = [];
   objs[1] = '<< /Type /Catalog /Pages 2 0 R >>';
   objs[2] = '<< /Type /Pages /Kids [3 0 R] /Count 1 >>';
-  objs[3] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> /XObject << /Im1 7 0 R >> >> /Contents 4 0 R >>';
+  objs[3] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 9 0 R >> /XObject << /Im1 7 0 R >> >> /Contents 4 0 R >>';
   objs[4] = `<< /Length ${flujo.length} >>\nstream\n${flujo}\nendstream`;
   objs[5] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
   objs[6] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
   objs[7] = `<< /Type /XObject /Subtype /Image /Width ${P.logo.px[0]} /Height ${P.logo.px[1]} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n${jpg}\nendstream`;
   const d0 = new Date(); const p2 = (n) => String(n).padStart(2, '0');
   const fechaPdf = `D:${d0.getFullYear()}${p2(d0.getMonth() + 1)}${p2(d0.getDate())}${p2(d0.getHours())}${p2(d0.getMinutes())}${p2(d0.getSeconds())}`;
+  objs[9] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>';
   objs[8] = `<< /Title (${escapar(codificar('Planilla ACMA ' + (d.mes || '')))}) /Author (${escapar(codificar(d.iglesia || 'Tesorería'))}) /Creator (Secretaria) /CreationDate (${fechaPdf}) >>`;
   let out = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
   const off = [];
