@@ -126,7 +126,7 @@ export const MENU = [
   { ruta: 'reuniones', texto: 'Reuniones', ico: '🗓️', roles: ['administrador', 'secretario', 'pastor', 'comision', 'consulta'] },
   { ruta: 'decisiones', texto: 'Decisiones', ico: '✅', roles: ['administrador', 'secretario', 'pastor', 'comision', 'consulta'] },
   { ruta: 'notas', texto: 'Notas', ico: '✉️', roles: ['administrador', 'secretario', 'pastor'] },
-  { ruta: 'calendario', texto: 'Calendario', ico: '📅', roles: ['administrador', 'secretario', 'pastor', 'comision', 'consulta'] },
+  { ruta: 'calendario', texto: 'Calendario', ico: '📅', roles: ['administrador', 'secretario', 'pastor', 'comision', 'consulta', 'tesorero'] },
   { ruta: 'inventario', texto: 'Inventario', ico: '📦', roles: ['administrador', 'secretario', 'pastor', 'comision'] },
   { ruta: 'documentos', texto: 'Documentos', ico: '🗂️', roles: ['administrador', 'secretario', 'pastor', 'comision'] },
   { ruta: 'informes', texto: 'Informes', ico: '📊', roles: ['administrador', 'secretario', 'pastor'] },

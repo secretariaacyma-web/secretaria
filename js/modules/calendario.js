@@ -1,6 +1,6 @@
 // Calendario: eventos, actividades fijas semanales (cultos, jóvenes, oración) y reuniones.
 import { sb, q } from '../supabase.js';
-import { puedeEscribir } from '../state.js';
+import { puedeEscribir, puede } from '../state.js';
 import { CATEGORIAS_EVENTO, DIAS_SEMANA, TIPOS_REUNION } from '../constantes.js';
 import {
   esc, fmtHora, fmtFechaLarga, encabezado, formModal, confirmar, toast, hoy, errorAmigable, abrirModal,
@@ -37,7 +37,8 @@ export async function eventosEntre(desde, hasta) {
   const [fijas, evs, reus] = await Promise.all([
     q(sb.from('actividades_fijas').select('*').eq('archivado', false).eq('activa', true)),
     q(sb.from('eventos').select('*').eq('archivado', false).gte('fecha', desde).lte('fecha', hasta)),
-    q(sb.from('reuniones').select('id,tipo,fecha,hora,lugar,estado,temas').eq('archivado', false).neq('estado', 'cancelada').gte('fecha', desde).lte('fecha', hasta)),
+    // El tesorero ve el calendario pero no las reuniones de comisión.
+    puede('tesorero') ? Promise.resolve([]) : q(sb.from('reuniones').select('id,tipo,fecha,hora,lugar,estado,temas').eq('archivado', false).neq('estado', 'cancelada').gte('fecha', desde).lte('fecha', hasta)),
   ]);
   const reemplazos = new Set(evs.filter((e) => e.fija_id).map((e) => `${e.fija_id}|${e.fecha}`));
   const out = evs.map(deEvento);
