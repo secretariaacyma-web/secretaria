@@ -33,6 +33,8 @@ function ancho(texto, f, size, tz = ESTRECHO) {
   return (w * size * tz) / 1000;
 }
 
+export { ANCHOS, codificar, escapar };
+
 export function fmtImporte(n) {
   const v = Math.round(Number(n || 0) * 100) / 100;
   return v.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

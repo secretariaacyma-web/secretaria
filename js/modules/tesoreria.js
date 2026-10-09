@@ -3,6 +3,7 @@
 import { sb, q } from '../supabase.js';
 import { estado, mapaPersonas, nombreCompleto } from '../state.js';
 import { generarPDFPlanilla, fmtImporte } from '../pdf-planilla.js';
+import { generarPDFLibro } from '../pdf-libro.js';
 import {
   RUBROS, CATEGORIAS_INGRESO, resumenMes, aportesDe, porcentajesDe, mapearFirebase, nombreMes, mesDe, r2, PORC_DEFECTO,
 } from '../tesoreria-calculo.js';
@@ -111,6 +112,35 @@ export async function render(cont, { query }) {
     try { await q(sb.from('tesoreria_movimientos').update({ anulado: false }).eq('id', m.id)); toast('Movimiento restaurado.', 'ok'); await recargar(); } catch (e) { toast(errorAmigable(e), 'error'); }
   }
 
+  // Libro de caja del mes (PDF para imprimir): movimientos en orden, saldo corriente y aportes al final.
+  function descargarLibro() {
+    try {
+      const r = resumen(); const f = datosFirmas();
+      const fe = (x) => { const [a, m, d] = String(x).slice(0, 10).split('-'); return `${d}/${m}/${a}`; };
+      const items = movs.filter((m) => mesDe(m.fecha) === mes && !m.anulado)
+        .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)) || String(a.creado_en).localeCompare(String(b.creado_en)));
+      let saldo = r.A; const filas = [];
+      for (const m of items) {
+        const ing = m.tipo === 'ingreso'; const monto = Number(m.monto); saldo = r2(saldo + (ing ? monto : -monto));
+        const base = ing ? CATEGORIAS_INGRESO[m.categoria] : RUBROS[m.rubro - 1];
+        const detalle = `${base}${m.descripcion ? ` – ${m.descripcion}` : ''}${m.sin_pastor ? ' (sin aporte al pastor)' : ''}`;
+        filas.push({ fecha: fe(m.fecha), detalle, ingreso: ing ? monto : 0, egreso: ing ? 0 : monto, saldo });
+      }
+      const [aa, mm] = mes.split('-'); const fin = fe(`${aa}-${mm}-${String(new Date(Number(aa), Number(mm), 0).getDate()).padStart(2, '0')}`);
+      for (const [t, v] of [[`Aporte al pastor (${r.pc.pastor}%)`, r.pastor], [`Aporte al distrito (${r.pc.distrito}%)`, r.distrito], [`Aporte a la central (${r.pc.central}%)`, r.central]]) {
+        if (!v) continue; saldo = r2(saldo - v); filas.push({ fecha: fin, detalle: t, ingreso: 0, egreso: v, saldo });
+      }
+      const blob = generarPDFLibro({
+        iglesia: config?.nombre_planilla || 'Villa Jardín', distrito: config?.distrito || 'SUR', mes: nombreMes(mes),
+        saldoAnterior: r.A, filas, totales: { ingresos: r.B, egresos: r.C, saldo: r.D },
+        firmas: { tesorero: f.tesorero, pastor: f.pastor, revisor: f.revisor },
+      });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Libro de caja - ${nombreMes(mes)}.pdf`; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast('Libro de caja descargado.', 'ok');
+    } catch (e) { toast(errorAmigable(e), 'error'); }
+  }
+
   function pintarMovimientos(box) {
     const r = resumen();
     const items = movs.filter((m) => mesDe(m.fecha) === mes && (verAnulados || !m.anulado))
@@ -130,8 +160,9 @@ export async function render(cont, { query }) {
         ${caja('Egresos del mes (sin aportes)', r.egresos)}
       </div>
       <div class="tarjeta mt"><div class="enc"><h2>Movimientos de ${esc(nombreMes(mes))}</h2>
-        <label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="t-anul" ${verAnulados ? 'checked' : ''}> Ver anulados</label></div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn sec" id="t-libro">🖨️ Descargar libro del mes (PDF)</button><label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="t-anul" ${verAnulados ? 'checked' : ''}> Ver anulados</label></div></div>
       <div class="cuerpo sin-pad" id="t-lista"></div></div>`;
+    box.querySelector('#t-libro').onclick = descargarLibro;
     box.querySelector('#t-anul').onchange = (e) => { verAnulados = e.target.checked; pintarMovimientos(box); };
     box.querySelector('#t-lista').innerHTML = tablaHTML([
       { h: 'Fecha', f: (m) => fmtFecha(m.fecha) },
